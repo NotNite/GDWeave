@@ -9,7 +9,9 @@ public class GDWeave {
     public static Hooks Hooks = null!;
 
     public static void Main() {
-        ConsoleFixer.Init();
+        if (Environment.GetEnvironmentVariable("GDWEAVE_DEBUG") is not null) {
+            ConsoleFixer.Init();
+        }
 
         Interop = new Interop();
         Hooks = new Hooks(Interop);
