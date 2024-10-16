@@ -17,7 +17,7 @@ public class StringVariant : Variant {
         ctx.Reader.ReadBytes(pad);
     }
 
-    private StringVariant(string value) {
+    public StringVariant(string value) {
         this.Value = value;
     }
 

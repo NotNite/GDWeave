@@ -8,7 +8,7 @@ public class BoolVariant : Variant {
         this.Value = ctx.Reader.ReadUInt32() != 0;
     }
 
-    private BoolVariant(bool value) {
+    public BoolVariant(bool value) {
         this.Value = value;
     }
 

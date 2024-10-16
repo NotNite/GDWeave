@@ -18,12 +18,21 @@ public unsafe class Hooks {
     public static ThreadLocal<string> CurrentPath = new(() => string.Empty);
     public static object StdoutLock = new();
 
-    public static ScriptModder Modder = new([
-        new SteamHacked(),
-        new FixCodeJoins()
-    ]);
+    public static ScriptModder Modder = null!;
 
     public Hooks(Interop interop) {
+        List<ScriptMod> mods = [
+            new SteamHacked(),
+            new FixCodeJoins(),
+        ];
+
+        if (GDWeave.Config.ControllerSupport) {
+            mods.Add(new ControllerInput.InputRegister());
+            mods.Add(new ControllerInput.PlayerModifier());
+        }
+
+        Modder = new ScriptModder(mods);
+
         var loadByteCodeAddr = interop.ScanText([
             "E8 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 48 89 7D ?? 48 8D 35",
             "48 89 54 24 ?? 48 89 4C 24 ?? 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC 78 02 00 00",
@@ -41,7 +50,7 @@ public unsafe class Hooks {
 
     private nint LoadByteCodeDetour(nint gdscript, GodotString* path) {
         CurrentPath.Value = path->Value;
-        lock (StdoutLock) Console.WriteLine($"Hooked load_byte_code: {CurrentPath.Value}");
+        //lock (StdoutLock) Console.WriteLine($"Hooked load_byte_code: {CurrentPath.Value}");
         return this.LoadByteCodeHook.Original(gdscript, path);
     }
 
@@ -80,7 +89,7 @@ public unsafe class Hooks {
             gdsc.Write(bw);
 
             var replacement = output.ToArray();
-            lock (StdoutLock) {
+            /*lock (StdoutLock) {
                 Console.WriteLine(
                     $"Hooked set_code_buffer ({path}): "
                     + $"{gdsc.Identifiers.Count} identifiers, "
@@ -90,7 +99,7 @@ public unsafe class Hooks {
                     + $"{data.Length} orig bytes, "
                     + $"{replacement.Length} new bytes"
                 );
-            }
+            }*/
             data = replacement;
         } catch (Exception e) {
             if (e is not InvalidDataException) {
@@ -191,4 +200,8 @@ public unsafe class Hooks {
             GodotVector.Dtor(this.Vector);
         }
     }
+
+    // messageboxa if it's needed
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    public static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
 }

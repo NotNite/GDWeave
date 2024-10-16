@@ -9,7 +9,7 @@ public class RealVariant : Variant {
         this.Is64 = ctx.Is64;
     }
 
-    private RealVariant(double value, bool is64) {
+    public RealVariant(double value, bool is64 = false) {
         this.Value = value;
         this.Is64 = is64;
     }

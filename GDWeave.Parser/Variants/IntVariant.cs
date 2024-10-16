@@ -9,7 +9,7 @@ public class IntVariant : Variant {
         this.Is64 = ctx.Is64;
     }
 
-    private IntVariant(long value, bool is64) {
+    public IntVariant(long value, bool is64 = false) {
         this.Value = value;
         this.Is64 = is64;
     }
