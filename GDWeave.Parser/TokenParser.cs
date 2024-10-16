@@ -14,14 +14,9 @@ public class TokenParser {
             var type = (TokenType) (token & TokenMask);
             var associatedData = token >> TokenBits;
 
-            return new Token {
-                Type = type,
-                AssociatedData = associatedData
-            };
+            return new Token(type, associatedData);
         } else {
-            return new Token {
-                Type = (TokenType) b
-            };
+            return new Token((TokenType) b);
         }
     }
 

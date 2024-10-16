@@ -16,6 +16,10 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\GDWeave.Parser\GDWeave.Parser.csproj" />
+        <ProjectReference Include="..\GDWeave.Parser\GDWeave.Parser.csproj"/>
     </ItemGroup>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+        <Exec Command="xcopy /Y /I &quot;$(TargetDir)&quot; &quot;$(WebfishingPath)/GDWeave&quot;" Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'"/>
+    </Target>
 </Project>

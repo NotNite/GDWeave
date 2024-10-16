@@ -29,7 +29,9 @@ public class GodotScriptFile {
             var bytes = br.ReadBytes((int) len);
             for (var j = 0; j < len; j++) bytes[j] ^= UselessXorKey;
 
-            var str = Encoding.UTF8.GetString(bytes).TrimEnd('\0');
+            var str = Encoding.UTF8.GetString(bytes);
+            Utils.TrimNullTerminator(ref str);
+
             this.Identifiers.Add(str);
         }
 
@@ -66,7 +68,7 @@ public class GodotScriptFile {
             for (var j = 0; j < bytes.Length; j++) bytes[j] ^= UselessXorKey;
             bw.Write((uint) (bytes.Length + extra));
             bw.Write(bytes);
-            bw.Write(new byte[extra]);
+            if (extra > 0) bw.Write(new byte[extra]);
         }
 
         foreach (var constant in this.Constants) {

@@ -1,32 +1,14 @@
-﻿using System.Diagnostics;
-
-namespace GDWeave.Parser;
+﻿namespace GDWeave.Parser;
 
 public class ScriptModder(List<ScriptMod>? mods = null) {
     public void Run(GodotScriptFile file, string path) {
-        var hls = new List<Token>();
-        foreach (var token in file.Tokens) {
-            var hl =
-                token.Type switch {
-                    TokenType.Identifier when token.AssociatedData is not null => new IdentifierToken {
-                        Type = token.Type,
-                        AssociatedData = token.AssociatedData,
-                        Name = file.Identifiers[(int) token.AssociatedData!.Value]
-                    },
-                    TokenType.Constant when token.AssociatedData is not null => new ConstantToken {
-                        Type = token.Type,
-                        AssociatedData = token.AssociatedData,
-                        Value = (Variant) file.Constants[(int) token.AssociatedData!.Value].Clone()
-                    },
-                    _ => token
-                };
-
-            hls.Add(hl);
-        }
+        var hls = Utils.CreateHighLevel(file);
 
         if (mods != null) {
             foreach (var mod in mods) {
-                if (mod.ShouldRun(path)) mod.Modify(path, hls);
+                if (mod.ShouldRun(path)) {
+                    hls = mod.Modify(path, hls).ToList();
+                }
             }
         }
 
@@ -59,14 +41,5 @@ public class ScriptModder(List<ScriptMod>? mods = null) {
 
             file.Tokens.Add(hl);
         }
-
-        var gameDir = Path.GetDirectoryName(Environment.ProcessPath)!;
-        var outFile = Path.Combine(gameDir, "gdc", path.Replace("res://", ""));
-        var outDir = Path.GetDirectoryName(outFile)!;
-        if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
-        if (File.Exists(outFile)) File.Delete(outFile);
-        using var f = File.OpenWrite(outFile);
-        using var bw = new BinaryWriter(f);
-        file.Write(bw);
     }
 }

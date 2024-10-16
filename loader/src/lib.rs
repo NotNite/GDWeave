@@ -1,11 +1,8 @@
 use netcorehost::{nethost, pdcstr, pdcstring::PdCString};
 use proxy_dll::proxy;
-use std::path::PathBuf;
 
 fn init() -> anyhow::Result<()> {
-    // lol
-    let dir = PathBuf::from("D:/code/csharp/GDWeave/GDWeave/bin/Debug/net8.0-windows8.0");
-
+    let dir = std::env::current_exe()?.parent().unwrap().join("GDWeave");
     let runtime_config_path = dir.join("GDWeave.runtimeconfig.json");
     let dll_path = dir.join("GDWeave.dll");
 

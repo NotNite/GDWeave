@@ -6,26 +6,28 @@ if (args.Length == 2 && args[0] == "parse") {
     var gdsc = new GodotScriptFile(br);
 
     Console.WriteLine($"Identifiers: {gdsc.Identifiers.Count}");
-    foreach (var identifier in gdsc.Identifiers) {
-        Console.WriteLine($"  {identifier}");
+    for (var i = 0; i < gdsc.Identifiers.Count; i++) {
+        Console.WriteLine($"  {i}: {gdsc.Identifiers[i]}");
     }
 
     Console.WriteLine($"Constants: {gdsc.Constants.Count}");
-    foreach (var constant in gdsc.Constants) {
-        Console.WriteLine($"  {constant}");
+    for (var i = 0; i < gdsc.Constants.Count; i++) {
+        Console.WriteLine($"  {i}: {gdsc.Constants[i]}");
     }
 
     Console.WriteLine($"Lines: {gdsc.Lines.Count}");
-    foreach (var (token, lineCol) in gdsc.Lines) {
-        Console.WriteLine($"  {token} {lineCol}");
+    for (var i = 0; i < gdsc.Lines.Count; i++) {
+        Console.WriteLine($"  {i}: {gdsc.Lines[i].Token} {gdsc.Lines[i].LineCol}");
     }
 
     Console.WriteLine($"Tokens: {gdsc.Tokens.Count}");
-    foreach (var token in gdsc.Tokens) {
-        Console.WriteLine($"  {token}");
+    var hls = Utils.CreateHighLevel(gdsc);
+    for (var i = 0; i < hls.Count; i++) {
+        Console.WriteLine($"  {i}: {hls[i]}");
     }
 }
 
+// Lol sorry
 const string inputPath = "D:/gdsc.bin";
 const string outputPath = "D:/gdsc_out.bin";
 

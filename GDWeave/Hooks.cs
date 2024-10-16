@@ -19,7 +19,8 @@ public unsafe class Hooks {
     public static object StdoutLock = new();
 
     public static ScriptModder Modder = new([
-        new SteamHacked()
+        new SteamHacked(),
+        new FixCodeJoins()
     ]);
 
     public Hooks(Interop interop) {
@@ -52,6 +53,21 @@ public unsafe class Hooks {
             using var ms = new MemoryStream(data.ToArray());
             using var br = new BinaryReader(ms);
             var gdsc = new GodotScriptFile(br);
+
+            try {
+                var gameDir = Path.GetDirectoryName(Environment.ProcessPath)!;
+                var outFile = Path.Combine(gameDir, "gdc", path.Replace("res://", ""));
+                var outDir = Path.GetDirectoryName(outFile)!;
+
+                if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
+                if (File.Exists(outFile)) File.Delete(outFile);
+
+                using var outFileHandle = File.OpenWrite(outFile);
+                using var cleanBw = new BinaryWriter(outFileHandle);
+                gdsc.Write(cleanBw);
+            } catch (Exception e) {
+                lock (StdoutLock) Console.WriteLine(e);
+            }
 
             try {
                 Modder.Run(gdsc, path);
@@ -122,7 +138,13 @@ public unsafe class Hooks {
     public struct GodotString {
         [FieldOffset(0x0)] public CowData CowData;
 
-        public string Value => Marshal.PtrToStringUni(this.CowData.Value, this.CowData.Size).TrimEnd('\0');
+        public string Value {
+            get {
+                var str = Marshal.PtrToStringUni(this.CowData.Value, this.CowData.Size);
+                Utils.TrimNullTerminator(ref str);
+                return str;
+            }
+        }
 
         public static GodotString* Ctor(string value) {
             var str = (GodotString*) Marshal.AllocHGlobal(sizeof(GodotString));
