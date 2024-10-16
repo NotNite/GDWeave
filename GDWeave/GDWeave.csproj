@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0-windows8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+        <!-- required for loader -->
+        <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Reloaded.Hooks" Version="4.3.0"/>
+        <PackageReference Include="Reloaded.Memory.Sigscan" Version="3.1.6"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\GDWeave.Parser\GDWeave.Parser.csproj" />
+    </ItemGroup>
+</Project>

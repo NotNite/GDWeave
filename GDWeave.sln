@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave", "GDWeave\GDWeave.csproj", "{CFF61119-51A6-4C46-AF1D-478AF111694D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave.Parser", "GDWeave.Parser\GDWeave.Parser.csproj", "{C9CCC2E2-F9A3-44F2-811B-4B031226C66B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave.Test", "GDWeave.Test\GDWeave.Test.csproj", "{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CFF61119-51A6-4C46-AF1D-478AF111694D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFF61119-51A6-4C46-AF1D-478AF111694D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFF61119-51A6-4C46-AF1D-478AF111694D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFF61119-51A6-4C46-AF1D-478AF111694D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9CCC2E2-F9A3-44F2-811B-4B031226C66B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9CCC2E2-F9A3-44F2-811B-4B031226C66B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9CCC2E2-F9A3-44F2-811B-4B031226C66B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9CCC2E2-F9A3-44F2-811B-4B031226C66B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,128 @@
+﻿namespace GDWeave.Parser;
+
+public class Token {
+    public TokenType Type;
+    public uint? AssociatedData;
+
+    public override string ToString() {
+        return $"Token({this.Type}, {this.AssociatedData})";
+    }
+}
+
+// used for high level
+public class ConstantToken : Token {
+    public required Variant Value;
+
+    public override string ToString() {
+        return $"ConstantToken({this.Type}, {this.AssociatedData}, {this.Value})";
+    }
+}
+
+public class IdentifierToken : Token {
+    public required string Name;
+
+    public override string ToString() {
+        return $"IdentifierToken({this.Type}, {this.AssociatedData}, {this.Name})";
+    }
+}
+
+public enum TokenType {
+    Empty,
+    Identifier,
+    Constant,
+    Self,
+    BuiltInType,
+    BuiltInFunc,
+    OpIn,
+    OpEqual,
+    OpNotEqual,
+    OpLess,
+    OpLessEqual,
+    OpGreater,
+    OpGreaterEqual,
+    OpAnd,
+    OpOr,
+    OpNot,
+    OpAdd,
+    OpSub,
+    OpMul,
+    OpDiv,
+    OpMod,
+    OpShiftLeft,
+    OpShiftRight,
+    OpAssign,
+    OpAssignAdd,
+    OpAssignSub,
+    OpAssignMul,
+    OpAssignDiv,
+    OpAssignMod,
+    OpAssignShiftLeft,
+    OpAssignShiftRight,
+    OpAssignBitAnd,
+    OpAssignBitOr,
+    OpAssignBitXor,
+    OpBitAnd,
+    OpBitOr,
+    OpBitXor,
+    OpBitInvert,
+    CfIf,
+    CfElif,
+    CfElse,
+    CfFor,
+    CfWhile,
+    CfBreak,
+    CfContinue,
+    CfPass,
+    CfReturn,
+    CfMatch,
+    PrFunction,
+    PrClass,
+    PrClassName,
+    PrExtends,
+    PrIs,
+    PrOnready,
+    PrTool,
+    PrStatic,
+    PrExport,
+    PrSetget,
+    PrConst,
+    PrVar,
+    PrAs,
+    PrVoid,
+    PrEnum,
+    PrPreload,
+    PrAssert,
+    PrYield,
+    PrSignal,
+    PrBreakpoint,
+    PrRemote,
+    PrSync,
+    PrMaster,
+    PrSlave,
+    PrPuppet,
+    PrRemotesync,
+    PrMastersync,
+    PrPuppetsync,
+    BracketOpen,
+    BracketClose,
+    CurlyBracketOpen,
+    CurlyBracketClose,
+    ParenthesisOpen,
+    ParenthesisClose,
+    Comma,
+    Semicolon,
+    Period,
+    QuestionMark,
+    Colon,
+    Dollar,
+    ForwardArrow,
+    Newline,
+    ConstPi,
+    ConstTau,
+    Wildcard,
+    ConstInf,
+    ConstNan,
+    Error,
+    Eof,
+    Cursor
+};

@@ -1,0 +1,13 @@
+[package]
+name = "loader"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+anyhow = "1.0.89"
+msgbox = "0.7.0"
+netcorehost = "0.17.0"
+proxy-dll = "0.2.5"
