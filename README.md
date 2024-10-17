@@ -1,6 +1,17 @@
 # GDWeave
 
-GDWeave is an experimental runtime patching system for compiled GDScript bytecode. It currently targets Godot 3.5.2 (for the game [WEBFISHING](https://store.steampowered.com/app/3146520/WEBFISHING/)), but it should be possible to fork for other bytecode versions.
+GDWeave is an experimental runtime patching system for compiled GDScript bytecode + mods and patches for the game [WEBFISHING](https://store.steampowered.com/app/3146520/WEBFISHING/).
+
+**This is not a modloader!** This is a heavily specific system for one game (WEBFISHING) on one engine version (3.5.2) on one platform (Windows x64). It should be possible to fork for other bytecode versions, and expand into its own modloader, but that is not my current focus at this time.
+
+## Installation
+
+- Download [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
+  - If you're playing on Linux, this needs to be installed in the Wine/Proton prefix.
+- Download [the latest release](https://github.com/NotNite/GDWeave/releases) and extract it to your WEBFISHING game install.
+- Edit the config file (e.g. to enable things like controller support).
+- Start the game.
+  - If you're playing on Linux, add `WINEDLLOVERRIDES="winmm=n,b" %command%` to the Steam launch options.
 
 ## Why?
 
@@ -15,8 +26,6 @@ Games shouldn't need to be fully decompiled into project files to be modded, and
 ## How?
 
 GDWeave uses a Rust proxy DLL to start a C# library in the target game's address space, then hooks functions in the Godot engine itself. It then parses the GDScript "bytecode" (really a syntax tree) and runs its own processors over it, rebuilding it in place.
-
-Given that this is a proof of concept, it's suggested to drag this into a proper cross-platform solution spanning multiple Godot versions, if you (the reader) decide to use this work.
 
 ## Why not fork Godot?
 
