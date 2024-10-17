@@ -222,8 +222,6 @@ public class ControllerInput {
                     yield return token;
                 }
             }
-
-            Thread.Sleep(1000);
         }
     }
 }

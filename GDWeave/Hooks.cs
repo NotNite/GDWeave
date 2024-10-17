@@ -23,7 +23,6 @@ public unsafe class Hooks {
     public Hooks(Interop interop) {
         List<ScriptMod> mods = [
             new SteamHacked(),
-            new FixCodeJoins(),
         ];
 
         if (GDWeave.Config.ControllerSupport) {
