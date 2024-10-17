@@ -1,12 +1,14 @@
 ﻿namespace GDWeave.Parser;
 
 public class ScriptModder(List<ScriptMod>? mods = null) {
-    public void Run(GodotScriptFile file, string path) {
+    public bool Run(GodotScriptFile file, string path) {
         var hls = Utils.CreateHighLevel(file);
 
+        var ran = false;
         if (mods != null) {
             foreach (var mod in mods) {
                 if (mod.ShouldRun(path)) {
+                    ran = true;
                     hls = mod.Modify(path, hls).ToList();
                 }
             }
@@ -41,5 +43,7 @@ public class ScriptModder(List<ScriptMod>? mods = null) {
 
             file.Tokens.Add(hl);
         }
+
+        return ran;
     }
 }

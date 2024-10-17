@@ -56,6 +56,7 @@ public unsafe class Hooks {
     private nint SetCodeBufferDetour(nint tokenizerBuffer, GodotVector* codeBuffer) {
         var data = codeBuffer->Data;
         var path = CurrentPath.Value ?? string.Empty;
+        var ran = false;
 
         try {
             using var ms = new MemoryStream(data.ToArray());
@@ -78,7 +79,7 @@ public unsafe class Hooks {
             }
 
             try {
-                Modder.Run(gdsc, path);
+                ran = Modder.Run(gdsc, path);
             } catch (Exception e) {
                 lock (StdoutLock) Console.WriteLine(e);
             }
@@ -104,6 +105,10 @@ public unsafe class Hooks {
             if (e is not InvalidDataException) {
                 lock (StdoutLock) Console.WriteLine(e);
             }
+        }
+
+        if (!ran) {
+            return this.SetCodeBufferHook.Original(tokenizerBuffer, codeBuffer);
         }
 
         using var vec = new GodotVectorWrapper(data);
