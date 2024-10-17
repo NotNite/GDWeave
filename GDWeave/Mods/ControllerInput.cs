@@ -4,20 +4,67 @@ using GDWeave.Parser.Variants;
 namespace GDWeave.Mods;
 
 public class ControllerInput {
+    private enum JoyAxis {
+        LeftX = 0,
+        LeftY = 1,
+        RightX = 2,
+        RightY = 3
+    }
+
+    private enum JoyButton {
+        LeftStickIn = 8,
+        RightStickIn = 9,
+        FaceUp = 3,
+        FaceRight = 1,
+        FaceDown = 0,
+        FaceLeft = 2,
+        Select = 10,
+        Start = 11,
+        DPadUp = 12,
+        DPadDown = 13,
+        DPadLeft = 14,
+        DPadRight = 15,
+        ShoulderLeft = 4,
+        ShoulderRight = 5,
+        TriggerLeft = 6,
+        TriggerRight = 7
+    }
+
+    // Custom
     private const string LookLeft = "gdweave_look_left";
     private const string LookRight = "gdweave_look_right";
     private const string LookUp = "gdweave_look_up";
     private const string LookDown = "gdweave_look_down";
 
+    private const string ZoomControl = "gdweave_zoom_control";
+
+    private const string TabNext = "gdweave_tab_next";
+    private const string TabPrevious = "gdweave_tab_previous";
+
+    // Movement
     private const string MoveLeft = "move_left";
     private const string MoveRight = "move_right";
     private const string MoveForward = "move_forward";
     private const string MoveBack = "move_back";
+    private const string MoveJump = "move_jump";
+    private const string MoveSprint = "move_sprint";
+    private const string MoveWalk = "move_walk";
 
-    private const int JoyAxisLeftX = 0;
-    private const int JoyAxisLeftY = 1;
-    private const int JoyAxisRightX = 2;
-    private const int JoyAxisRightY = 3;
+    // Actions
+    private const string Interact = "interact";
+    private const string Kiss = "kiss";
+    private const string Bark = "bark";
+    private const string PrimaryAction = "primary_action";
+
+    // Menus
+    private const string MenuOpen = "menu_open";
+    private const string BaitMenu = "bait_menu";
+    private const string EmoteWheel = "emote_wheel";
+    private const string Build = "build";
+
+    // Misc
+    private const string Freecam = "freecam";
+    private const string EscMenu = "esc_menu";
 
     public class InputRegister : ScriptMod {
         public override bool ShouldRun(string path) => path == "res://Scenes/Singletons/globals.gdc";
@@ -34,15 +81,33 @@ public class ControllerInput {
                 if (readyWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline, 1);
 
-                    foreach (var t in this.DoTheThing(LookLeft, JoyAxisRightX, -1)) yield return t;
-                    foreach (var t in this.DoTheThing(LookRight, JoyAxisRightX, 1)) yield return t;
-                    foreach (var t in this.DoTheThing(LookUp, JoyAxisRightY, 1)) yield return t;
-                    foreach (var t in this.DoTheThing(LookDown, JoyAxisRightY, -1)) yield return t;
+                    foreach (var t in this.HandleStick(LookLeft, JoyAxis.RightX, -1)) yield return t;
+                    foreach (var t in this.HandleStick(LookRight, JoyAxis.RightX, 1)) yield return t;
+                    foreach (var t in this.HandleStick(LookUp, JoyAxis.RightY, 1)) yield return t;
+                    foreach (var t in this.HandleStick(LookDown, JoyAxis.RightY, -1)) yield return t;
 
-                    foreach (var t in this.DoTheThing(MoveLeft, JoyAxisLeftX, -1)) yield return t;
-                    foreach (var t in this.DoTheThing(MoveRight, JoyAxisLeftX, 1)) yield return t;
-                    foreach (var t in this.DoTheThing(MoveForward, JoyAxisLeftY, -1)) yield return t;
-                    foreach (var t in this.DoTheThing(MoveBack, JoyAxisLeftY, 1)) yield return t;
+                    foreach (var t in this.HandleStick(MoveLeft, JoyAxis.LeftX, -1)) yield return t;
+                    foreach (var t in this.HandleStick(MoveRight, JoyAxis.LeftX, 1)) yield return t;
+                    foreach (var t in this.HandleStick(MoveForward, JoyAxis.LeftY, -1)) yield return t;
+                    foreach (var t in this.HandleStick(MoveBack, JoyAxis.LeftY, 1)) yield return t;
+
+                    foreach (var t in this.HandleButton(MoveSprint, JoyButton.LeftStickIn)) yield return t;
+                    foreach (var t in this.HandleButton(MoveWalk, JoyButton.RightStickIn)) yield return t;
+
+                    foreach (var t in this.HandleButton(Bark, JoyButton.FaceUp)) yield return t;
+                    foreach (var t in this.HandleButton(Kiss, JoyButton.FaceRight)) yield return t;
+                    foreach (var t in this.HandleButton(MoveJump, JoyButton.FaceDown)) yield return t;
+                    foreach (var t in this.HandleButton(Interact, JoyButton.FaceLeft)) yield return t;
+
+                    foreach (var t in this.HandleButton(PrimaryAction, JoyButton.TriggerRight)) yield return t;
+
+                    foreach (var t in this.HandleButton(BaitMenu, JoyButton.DPadUp)) yield return t;
+                    foreach (var t in this.HandleButton(EmoteWheel, JoyButton.DPadRight)) yield return t;
+                    foreach (var t in this.HandleButton(Freecam, JoyButton.DPadDown)) yield return t;
+                    foreach (var t in this.HandleButton(Build, JoyButton.DPadLeft)) yield return t;
+
+                    foreach (var t in this.HandleButton(MenuOpen, JoyButton.Select)) yield return t;
+                    foreach (var t in this.HandleButton(EscMenu, JoyButton.Start)) yield return t;
 
                     yield return new Token(TokenType.Newline, 1);
                 } else {
@@ -51,13 +116,19 @@ public class ControllerInput {
             }
         }
 
-        private IEnumerable<Token> DoTheThing(string map, int axis, float axisValue) {
-            foreach (var t in this.Register(map)) yield return t;
-            foreach (var t in this.Create(map, axis, axisValue)) yield return t;
-            foreach (var t in this.AddAction(map, map)) yield return t;
+        private IEnumerable<Token> HandleStick(string map, JoyAxis axis, float axisValue) {
+            foreach (var t in this.AddAction(map)) yield return t;
+            foreach (var t in this.CreateStickEvent(map, axis, axisValue)) yield return t;
+            foreach (var t in this.AddActionEvent(map, map)) yield return t;
         }
 
-        private IEnumerable<Token> Register(string map) {
+        private IEnumerable<Token> HandleButton(string map, JoyButton button) {
+            foreach (var t in this.AddAction(map)) yield return t;
+            foreach (var t in this.CreateButtonEvent(map, button)) yield return t;
+            foreach (var t in this.AddActionEvent(map, map)) yield return t;
+        }
+
+        private IEnumerable<Token> AddAction(string map) {
             // InputMap.add_action(map)
             yield return new IdentifierToken("InputMap");
             yield return new Token(TokenType.Period);
@@ -68,7 +139,7 @@ public class ControllerInput {
             yield return new Token(TokenType.Newline, 1);
         }
 
-        private IEnumerable<Token> Create(string varName, int axis, float axisValue) {
+        private IEnumerable<Token> CreateStickEvent(string varName, JoyAxis axis, float axisValue) {
             // var varName = InputEventJoypadMotion.new()
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(varName);
@@ -85,7 +156,7 @@ public class ControllerInput {
             yield return new Token(TokenType.Period);
             yield return new IdentifierToken("axis");
             yield return new Token(TokenType.OpAssign);
-            yield return new ConstantToken(new IntVariant(axis));
+            yield return new ConstantToken(new IntVariant((int)axis));
             yield return new Token(TokenType.Newline, 1);
 
             // varName.axis_value = axisValue
@@ -105,7 +176,36 @@ public class ControllerInput {
             yield return new Token(TokenType.Newline, 1);
         }
 
-        private IEnumerable<Token> AddAction(string actionName, string varName) {
+        private IEnumerable<Token> CreateButtonEvent(string varName, JoyButton button) {
+            // var varName = InputEventJoypadButton.new()
+            yield return new Token(TokenType.PrVar);
+            yield return new IdentifierToken(varName);
+            yield return new Token(TokenType.OpAssign);
+            yield return new IdentifierToken("InputEventJoypadButton");
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("new");
+            yield return new Token(TokenType.ParenthesisOpen);
+            yield return new Token(TokenType.ParenthesisClose);
+            yield return new Token(TokenType.Newline, 1);
+
+            // varName.button_index = button
+            yield return new IdentifierToken(varName);
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("button_index");
+            yield return new Token(TokenType.OpAssign);
+            yield return new ConstantToken(new IntVariant((int)button));
+            yield return new Token(TokenType.Newline, 1);
+
+            // varName.device = -1
+            yield return new IdentifierToken(varName);
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("device");
+            yield return new Token(TokenType.OpAssign);
+            yield return new ConstantToken(new IntVariant(-1));
+            yield return new Token(TokenType.Newline, 1);
+        }
+
+        private IEnumerable<Token> AddActionEvent(string actionName, string varName) {
             // InputMap.action_add_event(actionName, varName)
             yield return new IdentifierToken("InputMap");
             yield return new Token(TokenType.Period);
