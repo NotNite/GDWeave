@@ -50,8 +50,6 @@ public class ControllerInput {
     private const string MoveForward = "move_forward";
     private const string MoveBack = "move_back";
     private const string MoveJump = "move_jump";
-    private const string MoveSprint = "move_sprint";
-    private const string MoveWalk = "move_walk";
 
     // Actions
     private const string Interact = "interact";
@@ -276,6 +274,7 @@ public class ControllerInput {
                     foreach (var t in this.PatchHotbarControl()) yield return t;
                 } else if (sprintingWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline, 1);
+                    foreach (var t in this.PatchAnalogMovement()) yield return t;
                     foreach (var t in this.PatchToggleMovement()) yield return t;
                 } else {
                     yield return token;
@@ -451,14 +450,19 @@ public class ControllerInput {
             const int hotbarMin = 0;
             const int hotbarMax = 4;
 
-            // FIXME: spamming will move CurrentHotbar without equipping. checking `not locked` doesn't help
-            // if not ZoomControlPressed and not locked:
+            // if not ZoomControlPressed and not locked and state == STATES.DEFAULT:
             yield return new Token(TokenType.CfIf);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken(ZoomControlPressed);
             yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken("locked");
+            yield return new Token(TokenType.OpAnd);
+            yield return new IdentifierToken("state");
+            yield return new Token(TokenType.OpEqual);
+            yield return new IdentifierToken("STATES");
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("DEFAULT");
             yield return new Token(TokenType.Colon);
             yield return new Token(TokenType.Newline, 2);
 
@@ -522,6 +526,82 @@ public class ControllerInput {
             yield return new Token(TokenType.ParenthesisClose);
 
             yield return new Token(TokenType.Newline, 1);
+        }
+
+        private IEnumerable<Token> PatchAnalogMovement() {
+            Token[] camBaseTransformBasis = [
+                new IdentifierToken("cam_base"),
+                new(TokenType.Period),
+                new IdentifierToken("transform"),
+                new(TokenType.Period),
+                new IdentifierToken("basis")
+            ];
+
+            const string stickInput = "gdweave_stick_input";
+            const string direction = "direction";
+
+            // var stickInput = Input.get_vector(MoveRight, MoveLeft, MoveBack, MoveForward)
+            yield return new Token(TokenType.PrVar);
+            yield return new IdentifierToken(stickInput);
+            yield return new Token(TokenType.OpAssign);
+            yield return new IdentifierToken("Input");
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("get_vector");
+            yield return new Token(TokenType.ParenthesisOpen);
+            yield return new ConstantToken(new StringVariant(MoveRight));
+            yield return new Token(TokenType.Comma);
+            yield return new ConstantToken(new StringVariant(MoveLeft));
+            yield return new Token(TokenType.Comma);
+            yield return new ConstantToken(new StringVariant(MoveBack));
+            yield return new Token(TokenType.Comma);
+            yield return new ConstantToken(new StringVariant(MoveForward));
+            yield return new Token(TokenType.ParenthesisClose);
+            yield return new Token(TokenType.Newline, 1);
+
+            // direction = Vector3(stickInput.x, 0, stickInput.y)
+            yield return new IdentifierToken(direction);
+            yield return new Token(TokenType.OpAssign);
+            yield return new Token(TokenType.BuiltInType, (uint?) VariantType.Vector3);
+            yield return new Token(TokenType.ParenthesisOpen);
+            yield return new IdentifierToken(stickInput);
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("x");
+            yield return new Token(TokenType.Comma);
+            yield return new ConstantToken(new RealVariant(0));
+            yield return new Token(TokenType.Comma);
+            yield return new IdentifierToken(stickInput);
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("y");
+            yield return new Token(TokenType.ParenthesisClose);
+            yield return new Token(TokenType.Newline, 1);
+
+            // direction = -cam_base.transform.basis.xform(direction)
+            yield return new IdentifierToken(direction);
+            yield return new Token(TokenType.OpAssign);
+            yield return new Token(TokenType.OpSub);
+            foreach (var t in camBaseTransformBasis) yield return t;
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("xform");
+            yield return new Token(TokenType.ParenthesisOpen);
+            yield return new IdentifierToken(direction);
+            yield return new Token(TokenType.ParenthesisClose);
+            yield return new Token(TokenType.Newline, 1);
+
+            /*yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.TextPrint);
+            yield return new Token(TokenType.ParenthesisOpen);
+            yield return new ConstantToken(new StringVariant("direction: "));
+            yield return new Token(TokenType.Comma);
+            yield return new IdentifierToken(direction);
+            yield return new Token(TokenType.Comma);
+            yield return new ConstantToken(new StringVariant(" stickInput: "));
+            yield return new Token(TokenType.Comma);
+            yield return new IdentifierToken(stickInput);
+            yield return new Token(TokenType.Comma);
+            yield return new ConstantToken(new StringVariant(" cam_base: "));
+            yield return new Token(TokenType.Comma);
+            foreach (var t in camBaseTransformBasis) yield return t;
+            yield return new Token(TokenType.ParenthesisClose);
+            yield return new Token(TokenType.Newline, 1);*/
         }
 
         private IEnumerable<Token> PatchToggleMovement() {
