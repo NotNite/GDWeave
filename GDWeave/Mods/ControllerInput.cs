@@ -41,8 +41,8 @@ public class ControllerInput {
     private const string TabNext = "gdweave_tab_next";
     private const string TabPrevious = "gdweave_tab_previous";
 
-    //private const string ToggleSprint = "gdweave_toggle_sprint";
-    //private const string ToggleWalk = "gdweave_toggle_walk";
+    private const string ToggleSprint = "gdweave_toggle_sprint";
+    private const string ToggleWalk = "gdweave_toggle_walk";
 
     // Movement
     private const string MoveLeft = "move_left";
@@ -94,9 +94,6 @@ public class ControllerInput {
                     foreach (var t in this.HandleStick(MoveForward, JoyAxis.LeftY, -1)) yield return t;
                     foreach (var t in this.HandleStick(MoveBack, JoyAxis.LeftY, 1)) yield return t;
 
-                    foreach (var t in this.HandleButton(MoveSprint, JoyButton.LeftStickIn)) yield return t;
-                    foreach (var t in this.HandleButton(MoveWalk, JoyButton.RightStickIn)) yield return t;
-
                     foreach (var t in this.HandleButton(Bark, JoyButton.FaceUp)) yield return t;
                     foreach (var t in this.HandleButton(Kiss, JoyButton.FaceRight)) yield return t;
                     foreach (var t in this.HandleButton(MoveJump, JoyButton.FaceDown)) yield return t;
@@ -116,8 +113,8 @@ public class ControllerInput {
                     foreach (var t in this.HandleButton(TabPrevious, JoyButton.ShoulderLeft)) yield return t;
                     foreach (var t in this.HandleButton(ZoomControl, JoyButton.TriggerLeft)) yield return t;
 
-                    //foreach (var t in this.HandleButton(ToggleSprint, JoyButton.LeftStickIn)) yield return t;
-                    //foreach (var t in this.HandleButton(ToggleWalk, JoyButton.RightStickIn)) yield return t;
+                    foreach (var t in this.HandleButton(ToggleSprint, JoyButton.LeftStickIn)) yield return t;
+                    foreach (var t in this.HandleButton(ToggleWalk, JoyButton.RightStickIn)) yield return t;
 
                     yield return new Token(TokenType.Newline, 1);
                 } else {
@@ -166,7 +163,7 @@ public class ControllerInput {
             yield return new Token(TokenType.Period);
             yield return new IdentifierToken("axis");
             yield return new Token(TokenType.OpAssign);
-            yield return new ConstantToken(new IntVariant((int)axis));
+            yield return new ConstantToken(new IntVariant((int) axis));
             yield return new Token(TokenType.Newline, 1);
 
             // varName.axis_value = axisValue
@@ -203,7 +200,7 @@ public class ControllerInput {
             yield return new Token(TokenType.Period);
             yield return new IdentifierToken("button_index");
             yield return new Token(TokenType.OpAssign);
-            yield return new ConstantToken(new IntVariant((int)button));
+            yield return new ConstantToken(new IntVariant((int) button));
             yield return new Token(TokenType.Newline, 1);
 
             // varName.device = -1
@@ -232,9 +229,10 @@ public class ControllerInput {
     public class PlayerModifier : ScriptMod {
         public override bool ShouldRun(string path) => path == "res://Scenes/Entities/Player/player.gdc";
 
+        private const string WishSprint = "gdweave_wish_sprint";
+        private const string WishWalk = "gdweave_wish_walk";
         private const string CurrentHotbar = "gdweave_current_hotbar";
-        //private const string WishSprint = "gdweave_wish_sprint";
-        //private const string WishWalk = "gdweave_wish_walk";
+        private const string ZoomControlPressed = "gdweave_zoom_control_pressed";
 
         public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var customHeldItemWaiter = new TokenWaiter(
@@ -245,15 +243,28 @@ public class ControllerInput {
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
             );
-            //var slowWalkingWaiter = new TokenWaiter(
-            //    t => t.Type is TokenType.Newline && t.AssociatedData is 1,
-            //    waitForReady: true
-            //);
+            var sprintingWaiter = new TokenWaiter(
+                t => t.Type is TokenType.Newline && t.AssociatedData is 1,
+                waitForReady: true
+            );
+            var isSlowWalkingLine = false;
 
             foreach (var token in tokens) {
+                if (token is IdentifierToken {Name: "slow_walking"}) isSlowWalkingLine = true;
+                if (isSlowWalkingLine) {
+                    if (token is ConstantToken {
+                            Value: StringVariant {
+                                Value: "move_walk"
+                            }
+                        }) {
+                        sprintingWaiter.SetReady();
+                    } else if (token.Type is TokenType.Newline) {
+                        isSlowWalkingLine = false;
+                    }
+                }
+
                 if (token is IdentifierToken {Name: "custom_held_item"}) customHeldItemWaiter.SetReady();
                 if (token is ConstantToken {Value: StringVariant {Value: "bind_5"}}) bind5Waiter.SetReady();
-                //if (token is IdentifierToken {Name: "slow_walking"}) slowWalkingWaiter.SetReady();
 
                 if (customHeldItemWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline);
@@ -263,9 +274,9 @@ public class ControllerInput {
                     foreach (var t in this.PatchLook()) yield return t;
                     foreach (var t in this.PatchZoomControl()) yield return t;
                     foreach (var t in this.PatchHotbarControl()) yield return t;
-                //} else if (slowWalkingWaiter.Check(token)) {
-                //    yield return new Token(TokenType.Newline, 1);
-                //    foreach (var t in this.PatchToggleMovement()) yield return t;
+                } else if (sprintingWaiter.Check(token)) {
+                    yield return new Token(TokenType.Newline, 1);
+                    foreach (var t in this.PatchToggleMovement()) yield return t;
                 } else {
                     yield return token;
                 }
@@ -273,28 +284,26 @@ public class ControllerInput {
         }
 
         private IEnumerable<Token> PatchSetupPlayerVars() {
-            // var gdweave_current_hotbar = -1
+            // var CurrentHotbar = -1
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new IntVariant(-1));
             yield return new Token(TokenType.Newline);
 
-            /*
-            // var gdweave_wish_sprint = false
+            // var WishSprint = false
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(WishSprint);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new BoolVariant(false));
             yield return new Token(TokenType.Newline);
 
-            // var gdweave_wish_walk = false
+            // var WishWalk = false
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(WishWalk);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new BoolVariant(false));
             yield return new Token(TokenType.Newline);
-            */
         }
 
         private IEnumerable<Token> PatchLook() {
@@ -380,41 +389,39 @@ public class ControllerInput {
         }
 
         private IEnumerable<Token> PatchZoomControl() {
-            const string zoomControlPressed = "gdweave_zoom_control_pressed";
             const string tabNextPressed = "gdweave_tab_next_pressed";
             const string tabPreviousPressed = "gdweave_tab_previous_pressed";
-
             const string cameraZoom = "camera_zoom";
             const double zoomAmount = 0.2;
 
-            // var zoomControlPressed = Input.is_action_pressed("gdweave_zoom_control")
+            // var ZoomControlPressed = Input.is_action_pressed(ZoomControl)
             yield return new Token(TokenType.PrVar);
-            yield return new IdentifierToken(zoomControlPressed);
+            yield return new IdentifierToken(ZoomControlPressed);
             yield return new Token(TokenType.OpAssign);
             foreach (var t in this.IsActionPressedShort(ZoomControl)) yield return t;
             yield return new Token(TokenType.Newline, 1);
 
-            // var tabNextPressed = Input.is_action_pressed("gdweave_tab_next")
+            // var tabNextPressed = Input.is_action_pressed(TabNext)
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(tabNextPressed);
             yield return new Token(TokenType.OpAssign);
             foreach (var t in this.IsActionPressedShort(TabNext)) yield return t;
             yield return new Token(TokenType.Newline, 1);
 
-            // var tabPreviousPressed = Input.is_action_pressed("gdweave_tab_previous")
+            // var tabPreviousPressed = Input.is_action_pressed(TabPrevious)
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(tabPreviousPressed);
             yield return new Token(TokenType.OpAssign);
             foreach (var t in this.IsActionPressedShort(TabPrevious)) yield return t;
             yield return new Token(TokenType.Newline, 1);
 
-            // if zoomControlPressed:
+            // if ZoomControlPressed:
             yield return new Token(TokenType.CfIf);
-            yield return new IdentifierToken(zoomControlPressed);
+            yield return new IdentifierToken(ZoomControlPressed);
             yield return new Token(TokenType.Colon);
             yield return new Token(TokenType.Newline, 2);
 
-            // if tabNextPressed and not tabPreviousPressed: camera_zoom += 0.3
+            // if tabNextPressed and not tabPreviousPressed: CameraZoom += 0.3
             yield return new Token(TokenType.CfIf);
             yield return new IdentifierToken(tabNextPressed);
             yield return new Token(TokenType.OpAnd);
@@ -426,7 +433,7 @@ public class ControllerInput {
             yield return new ConstantToken(new RealVariant(zoomAmount));
             yield return new Token(TokenType.Newline, 2);
 
-            // if tabPreviousPressed and not tabNextPressed: camera_zoom -= 0.3
+            // if tabPreviousPressed and not tabNextPressed: CameraZoom -= 0.3
             yield return new Token(TokenType.CfIf);
             yield return new IdentifierToken(tabPreviousPressed);
             yield return new Token(TokenType.OpAnd);
@@ -440,18 +447,15 @@ public class ControllerInput {
         }
 
         private IEnumerable<Token> PatchHotbarControl() {
+            const string equipHotbar = "_equip_hotbar";
             const int hotbarMin = 0;
             const int hotbarMax = 4;
 
-            const string currentHotbar = "gdweave_current_hotbar";
-            const string zoomControlPressed = "gdweave_zoom_control_pressed";
-            const string equipHotbar = "_equip_hotbar";
-
-            // FIXME: spamming will move currentHotbar without equipping. checking `not locked` doesn't help
-            // if not gdweave_zoom_control_pressed and not locked:
+            // FIXME: spamming will move CurrentHotbar without equipping. checking `not locked` doesn't help
+            // if not ZoomControlPressed and not locked:
             yield return new Token(TokenType.CfIf);
             yield return new Token(TokenType.OpNot);
-            yield return new IdentifierToken(zoomControlPressed);
+            yield return new IdentifierToken(ZoomControlPressed);
             yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken("locked");
@@ -464,27 +468,27 @@ public class ControllerInput {
             yield return new Token(TokenType.Colon);
             yield return new Token(TokenType.Newline, 3);
 
-            // currentHotbar += 1
-            yield return new IdentifierToken(currentHotbar);
+            // CurrentHotbar += 1
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpAssignAdd);
             yield return new ConstantToken(new IntVariant(1));
             yield return new Token(TokenType.Newline, 3);
 
-            // if currentHotbar > hotbarMax: currentHotbar = hotbarMin
+            // if CurrentHotbar > hotbarMax: CurrentHotbar = hotbarMin
             yield return new Token(TokenType.CfIf);
-            yield return new IdentifierToken(currentHotbar);
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpGreater);
             yield return new ConstantToken(new IntVariant(hotbarMax));
             yield return new Token(TokenType.Colon);
-            yield return new IdentifierToken(currentHotbar);
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new IntVariant(hotbarMin));
             yield return new Token(TokenType.Newline, 3);
 
-            // _equip_hotbar(currentHotbar)
+            // equipHotbar(CurrentHotbar)
             yield return new IdentifierToken(equipHotbar);
             yield return new Token(TokenType.ParenthesisOpen);
-            yield return new IdentifierToken(currentHotbar);
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.ParenthesisClose);
             yield return new Token(TokenType.Newline, 2);
 
@@ -494,33 +498,32 @@ public class ControllerInput {
             yield return new Token(TokenType.Colon);
             yield return new Token(TokenType.Newline, 3);
 
-            // currentHotbar -= 1
-            yield return new IdentifierToken(currentHotbar);
+            // CurrentHotbar -= 1
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpAssignSub);
             yield return new ConstantToken(new IntVariant(1));
             yield return new Token(TokenType.Newline, 3);
 
-            // if currentHotbar < hotbarMin: currentHotbar = hotbarMax
+            // if CurrentHotbar < hotbarMin: CurrentHotbar = hotbarMax
             yield return new Token(TokenType.CfIf);
-            yield return new IdentifierToken(currentHotbar);
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpLess);
             yield return new ConstantToken(new IntVariant(hotbarMin));
             yield return new Token(TokenType.Colon);
-            yield return new IdentifierToken(currentHotbar);
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new IntVariant(hotbarMax));
             yield return new Token(TokenType.Newline, 3);
 
-            // _equip_hotbar(currentHotbar)
+            // equipHotbar(CurrentHotbar)
             yield return new IdentifierToken(equipHotbar);
             yield return new Token(TokenType.ParenthesisOpen);
-            yield return new IdentifierToken(currentHotbar);
+            yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.ParenthesisClose);
 
             yield return new Token(TokenType.Newline, 1);
         }
 
-        /*
         private IEnumerable<Token> PatchToggleMovement() {
             // if Input.is_action_just_pressed(ToggleSprint):
             yield return new Token(TokenType.CfIf);
@@ -534,7 +537,7 @@ public class ControllerInput {
             yield return new ConstantToken(new BoolVariant(false));
             yield return new Token(TokenType.Newline, 2);
 
-            // WishSprint = !WishSprint
+            // WishSprint = not WishSprint
             yield return new IdentifierToken(WishSprint);
             yield return new Token(TokenType.OpAssign);
             yield return new Token(TokenType.OpNot);
@@ -575,7 +578,6 @@ public class ControllerInput {
             yield return new IdentifierToken(WishWalk);
             yield return new Token(TokenType.Newline, 1);
         }
-        */
 
         private IEnumerable<Token> IsActionPressedShort(string action) {
             yield return new IdentifierToken("Input");
