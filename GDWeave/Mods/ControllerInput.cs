@@ -255,6 +255,11 @@ public class ControllerInput {
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
             );
+            var rodCastDistWaiter = new TokenWaiter(
+                t => t.Type is TokenType.ParenthesisClose,
+                waitForReady: true
+            );
+            var isSprintReelLine = false;
 
             foreach (var token in tokens) {
                 if (token is IdentifierToken {Name: "slow_walking"}) isSlowWalkingLine = true;
@@ -263,6 +268,15 @@ public class ControllerInput {
                         sprintingWaiter.SetReady();
                     } else if (token.Type is TokenType.Newline) {
                         isSlowWalkingLine = false;
+                    }
+                }
+
+                if (token is IdentifierToken {Name: "rod_cast_dist"}) isSprintReelLine = true;
+                if (isSprintReelLine) {
+                    if (token is ConstantToken {Value: StringVariant {Value: "move_sprint"}}) {
+                        rodCastDistWaiter.SetReady();
+                    } else if (token.Type is TokenType.Newline) {
+                        isSprintReelLine = false;
                     }
                 }
 
@@ -289,6 +303,9 @@ public class ControllerInput {
                 } else if (processMovementWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline, 1);
                     if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchLandVibration()) yield return t;
+                } else if (rodCastDistWaiter.Check(token)) {
+                    yield return new Token(TokenType.ParenthesisClose, 1);
+                    foreach (var t in this.PatchSprintReel()) yield return t;
                 } else {
                     yield return token;
                 }
@@ -739,6 +756,12 @@ public class ControllerInput {
             yield return new Token(TokenType.Colon);
             foreach (var t in VibrateController(0, 0.5, 0.25)) yield return t;
             yield return new Token(TokenType.Newline, 1);
+        }
+
+        private IEnumerable<Token> PatchSprintReel() {
+            // ... or Input.is_action_pressed(ZoomControl) ...
+            yield return new Token(TokenType.OpOr);
+            foreach (var t in this.IsActionPressedShort(ZoomControl)) yield return t;
         }
 
         private IEnumerable<Token> IsActionPressedShort(string action) {
