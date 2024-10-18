@@ -26,10 +26,40 @@ public class GDWeave {
     public static Config GetConfig() {
         var configPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, "gdweave.json");
         if (!File.Exists(configPath)) {
-            return new Config();
+            var defaultConfig = new Config();
+            string? defaultConfigJson = null;
+
+            try {
+                defaultConfigJson = JsonSerializer.Serialize(defaultConfig);
+            } catch (Exception e) {
+                Console.WriteLine($"GDWeave: Failed to serialize default config, not creating the file: {e.Message}");
+            }
+
+            if (defaultConfigJson is not null && defaultConfigJson != "null") {
+                try {
+                    var configFile = File.CreateText(configPath);
+                    configFile.Write(defaultConfigJson);
+                    configFile.Close();
+                    Console.WriteLine("GDWeave: Created new config file");
+                } catch (Exception e) {
+                    Console.WriteLine($"GDWeave: Failed to create config file: {e.Message}");
+                }
+            }
+
+            return defaultConfig;
         }
 
-        var json = File.ReadAllText(configPath);
-        return JsonSerializer.Deserialize<Config>(json)!;
+        try {
+            var json = File.ReadAllText(configPath);
+            var config = JsonSerializer.Deserialize<Config>(json);
+            if (config is null) {
+                throw new Exception("Deserialized result is null");
+            }
+            Console.WriteLine("GDWeave: Read config file");
+            return config;
+        } catch (Exception e) {
+            Console.WriteLine($"GDWeave: Failed to deserialize config file: {e.Message}");
+            return new Config();
+        }
     }
 }
