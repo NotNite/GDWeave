@@ -227,6 +227,7 @@ public class ControllerInput {
     public class PlayerModifier : ScriptMod {
         public override bool ShouldRun(string path) => path == "res://Scenes/Entities/Player/player.gdc";
 
+        private const string UsingController = "gdweave_using_controller";
         private const string WishSprint = "gdweave_wish_sprint";
         private const string WishWalk = "gdweave_wish_walk";
         private const string CurrentHotbar = "gdweave_current_hotbar";
@@ -246,6 +247,10 @@ public class ControllerInput {
                 waitForReady: true
             );
             var isSlowWalkingLine = false;
+            var inputWaiter = new TokenWaiter(
+                t => t.Type is TokenType.Newline && t.AssociatedData is 1,
+                waitForReady: true
+            );
 
             foreach (var token in tokens) {
                 if (token is IdentifierToken {Name: "slow_walking"}) isSlowWalkingLine = true;
@@ -263,6 +268,7 @@ public class ControllerInput {
 
                 if (token is IdentifierToken {Name: "custom_held_item"}) customHeldItemWaiter.SetReady();
                 if (token is ConstantToken {Value: StringVariant {Value: "bind_5"}}) bind5Waiter.SetReady();
+                if (token is IdentifierToken {Name: "_input"}) inputWaiter.SetReady();
 
                 if (customHeldItemWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline);
@@ -276,6 +282,9 @@ public class ControllerInput {
                     yield return new Token(TokenType.Newline, 1);
                     foreach (var t in this.PatchAnalogMovement()) yield return t;
                     foreach (var t in this.PatchToggleMovement()) yield return t;
+                } else if (inputWaiter.Check(token)) {
+                    yield return new Token(TokenType.Newline, 1);
+                    foreach (var t in this.PatchCheckController()) yield return t;
                 } else {
                     yield return token;
                 }
@@ -283,6 +292,13 @@ public class ControllerInput {
         }
 
         private IEnumerable<Token> PatchSetupPlayerVars() {
+            // var UsingController = false
+            yield return new Token(TokenType.PrVar);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.OpAssign);
+            yield return new ConstantToken(new BoolVariant(false));
+            yield return new Token(TokenType.Newline);
+
             // var CurrentHotbar = -1
             yield return new Token(TokenType.PrVar);
             yield return new IdentifierToken(CurrentHotbar);
@@ -353,6 +369,12 @@ public class ControllerInput {
                 new IdentifierToken("x")
             ];
 
+            // if UsingController:
+            yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.Colon);
+            yield return new Token(TokenType.Newline, 2);
+
             // cam_base.rotation_degrees.y -= inputVar.x * mouseSensVar
             foreach (var t in camBaseRotation) yield return t;
             yield return new Token(TokenType.OpAssignSub);
@@ -361,7 +383,7 @@ public class ControllerInput {
             yield return new IdentifierToken("x");
             yield return new Token(TokenType.OpMul);
             yield return new IdentifierToken(mouseSensVar);
-            yield return new Token(TokenType.Newline, 1);
+            yield return new Token(TokenType.Newline, 2);
 
             // cam_pivot.rotation_degrees.x += inputVar.y * mouseSensVar
             foreach (var t in camPivotRotation) yield return t;
@@ -371,7 +393,7 @@ public class ControllerInput {
             yield return new IdentifierToken("y");
             yield return new Token(TokenType.OpMul);
             yield return new IdentifierToken(mouseSensVar);
-            yield return new Token(TokenType.Newline, 1);
+            yield return new Token(TokenType.Newline, 2);
 
             // cam_pivot.rotation_degrees.x = clamp(cam_pivot.rotation_degrees.x, -80, 80)
             foreach (var t in camPivotRotation) yield return t;
@@ -414,8 +436,10 @@ public class ControllerInput {
             foreach (var t in this.IsActionPressedShort(TabPrevious)) yield return t;
             yield return new Token(TokenType.Newline, 1);
 
-            // if ZoomControlPressed:
+            // if UsingController and ZoomControlPressed:
             yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.OpAnd);
             yield return new IdentifierToken(ZoomControlPressed);
             yield return new Token(TokenType.Colon);
             yield return new Token(TokenType.Newline, 2);
@@ -450,8 +474,10 @@ public class ControllerInput {
             const int hotbarMin = 0;
             const int hotbarMax = 4;
 
-            // if not ZoomControlPressed and not locked and state == STATES.DEFAULT:
+            // if UsingController and not ZoomControlPressed and not locked and state == STATES.DEFAULT:
             yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken(ZoomControlPressed);
             yield return new Token(TokenType.OpAnd);
@@ -524,7 +550,6 @@ public class ControllerInput {
             yield return new Token(TokenType.ParenthesisOpen);
             yield return new IdentifierToken(CurrentHotbar);
             yield return new Token(TokenType.ParenthesisClose);
-
             yield return new Token(TokenType.Newline, 1);
         }
 
@@ -558,6 +583,12 @@ public class ControllerInput {
             yield return new Token(TokenType.ParenthesisClose);
             yield return new Token(TokenType.Newline, 1);
 
+            // if UsingController:
+            yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.Colon);
+            yield return new Token(TokenType.Newline, 2);
+
             // direction = Vector3(stickInput.x, 0, stickInput.y)
             yield return new IdentifierToken(direction);
             yield return new Token(TokenType.OpAssign);
@@ -573,7 +604,7 @@ public class ControllerInput {
             yield return new Token(TokenType.Period);
             yield return new IdentifierToken("y");
             yield return new Token(TokenType.ParenthesisClose);
-            yield return new Token(TokenType.Newline, 1);
+            yield return new Token(TokenType.Newline, 2);
 
             // direction = -cam_base.transform.basis.xform(direction)
             yield return new IdentifierToken(direction);
@@ -586,62 +617,52 @@ public class ControllerInput {
             yield return new IdentifierToken(direction);
             yield return new Token(TokenType.ParenthesisClose);
             yield return new Token(TokenType.Newline, 1);
-
-            /*yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.TextPrint);
-            yield return new Token(TokenType.ParenthesisOpen);
-            yield return new ConstantToken(new StringVariant("direction: "));
-            yield return new Token(TokenType.Comma);
-            yield return new IdentifierToken(direction);
-            yield return new Token(TokenType.Comma);
-            yield return new ConstantToken(new StringVariant(" stickInput: "));
-            yield return new Token(TokenType.Comma);
-            yield return new IdentifierToken(stickInput);
-            yield return new Token(TokenType.Comma);
-            yield return new ConstantToken(new StringVariant(" cam_base: "));
-            yield return new Token(TokenType.Comma);
-            foreach (var t in camBaseTransformBasis) yield return t;
-            yield return new Token(TokenType.ParenthesisClose);
-            yield return new Token(TokenType.Newline, 1);*/
         }
 
         private IEnumerable<Token> PatchToggleMovement() {
+            // if UsingController:
+            yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.Colon);
+            yield return new Token(TokenType.Newline, 2);
+
             // if Input.is_action_just_pressed(ToggleSprint):
             yield return new Token(TokenType.CfIf);
             foreach (var t in this.IsActionJustPressedShort(ToggleSprint)) yield return t;
             yield return new Token(TokenType.Colon);
-            yield return new Token(TokenType.Newline, 2);
+            yield return new Token(TokenType.Newline, 3);
 
             // WishWalk = false
             yield return new IdentifierToken(WishWalk);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new BoolVariant(false));
-            yield return new Token(TokenType.Newline, 2);
+            yield return new Token(TokenType.Newline, 3);
 
             // WishSprint = not WishSprint
             yield return new IdentifierToken(WishSprint);
             yield return new Token(TokenType.OpAssign);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken(WishSprint);
-            yield return new Token(TokenType.Newline, 1);
+            yield return new Token(TokenType.Newline, 2);
 
-            // if Input.is_action_just_pressed(ToggleWalk):
-            yield return new Token(TokenType.CfIf);
+            // elif Input.is_action_just_pressed(ToggleWalk):
+            yield return new Token(TokenType.CfElif);
             foreach (var t in this.IsActionJustPressedShort(ToggleWalk)) yield return t;
             yield return new Token(TokenType.Colon);
-            yield return new Token(TokenType.Newline, 2);
+            yield return new Token(TokenType.Newline, 3);
 
             // WishSprint = false
             yield return new IdentifierToken(WishSprint);
             yield return new Token(TokenType.OpAssign);
             yield return new ConstantToken(new BoolVariant(false));
-            yield return new Token(TokenType.Newline, 2);
+            yield return new Token(TokenType.Newline, 3);
 
             // WishWalk = !WishWalk
             yield return new IdentifierToken(WishWalk);
             yield return new Token(TokenType.OpAssign);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken(WishWalk);
-            yield return new Token(TokenType.Newline, 1);
+            yield return new Token(TokenType.Newline, 2);
 
             // sprinting = not Input.is_action_pressed("move_sneak") and WishSprint
             yield return new IdentifierToken("sprinting");
@@ -650,12 +671,26 @@ public class ControllerInput {
             foreach (var t in this.IsActionPressedShort("move_sneak")) yield return t;
             yield return new Token(TokenType.OpAnd);
             yield return new IdentifierToken(WishSprint);
-            yield return new Token(TokenType.Newline, 1);
+            yield return new Token(TokenType.Newline, 2);
 
             // slow_walking = WishWalk
             yield return new IdentifierToken("slow_walking");
             yield return new Token(TokenType.OpAssign);
             yield return new IdentifierToken(WishWalk);
+            yield return new Token(TokenType.Newline, 1);
+        }
+
+        private IEnumerable<Token> PatchCheckController() {
+            // UsingController = event is InputEventJoypadButton or event is InputEventJoypadMotion
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.OpAssign);
+            yield return new IdentifierToken("event");
+            yield return new Token(TokenType.PrIs);
+            yield return new IdentifierToken("InputEventJoypadButton");
+            yield return new Token(TokenType.OpOr);
+            yield return new IdentifierToken("event");
+            yield return new Token(TokenType.PrIs);
+            yield return new IdentifierToken("InputEventJoypadMotion");
             yield return new Token(TokenType.Newline, 1);
         }
 
