@@ -251,15 +251,15 @@ public class ControllerInput {
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
             );
+            var processMovementWaiter = new TokenWaiter(
+                t => t.Type is TokenType.Newline && t.AssociatedData is 1,
+                waitForReady: true
+            );
 
             foreach (var token in tokens) {
                 if (token is IdentifierToken {Name: "slow_walking"}) isSlowWalkingLine = true;
                 if (isSlowWalkingLine) {
-                    if (token is ConstantToken {
-                            Value: StringVariant {
-                                Value: "move_walk"
-                            }
-                        }) {
+                    if (token is ConstantToken {Value: StringVariant {Value: "move_walk"}}) {
                         sprintingWaiter.SetReady();
                     } else if (token.Type is TokenType.Newline) {
                         isSlowWalkingLine = false;
@@ -269,6 +269,7 @@ public class ControllerInput {
                 if (token is IdentifierToken {Name: "custom_held_item"}) customHeldItemWaiter.SetReady();
                 if (token is ConstantToken {Value: StringVariant {Value: "bind_5"}}) bind5Waiter.SetReady();
                 if (token is IdentifierToken {Name: "_input"}) inputWaiter.SetReady();
+                if (token is IdentifierToken {Name: "_process_movement"}) processMovementWaiter.SetReady();
 
                 if (customHeldItemWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline);
@@ -285,6 +286,9 @@ public class ControllerInput {
                 } else if (inputWaiter.Check(token)) {
                     yield return new Token(TokenType.Newline, 1);
                     foreach (var t in this.PatchCheckController()) yield return t;
+                } else if (processMovementWaiter.Check(token)) {
+                    yield return new Token(TokenType.Newline, 1);
+                    if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchLandVibration()) yield return t;
                 } else {
                     yield return token;
                 }
@@ -681,9 +685,8 @@ public class ControllerInput {
         }
 
         private IEnumerable<Token> PatchCheckController() {
-            // UsingController = event is InputEventJoypadButton or event is InputEventJoypadMotion
-            yield return new IdentifierToken(UsingController);
-            yield return new Token(TokenType.OpAssign);
+            // if event is InputEventJoypadButton or event is InputEventJoypadMotion: UsingController = true
+            yield return new Token(TokenType.CfIf);
             yield return new IdentifierToken("event");
             yield return new Token(TokenType.PrIs);
             yield return new IdentifierToken("InputEventJoypadButton");
@@ -691,6 +694,50 @@ public class ControllerInput {
             yield return new IdentifierToken("event");
             yield return new Token(TokenType.PrIs);
             yield return new IdentifierToken("InputEventJoypadMotion");
+            yield return new Token(TokenType.Colon);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.OpAssign);
+            yield return new ConstantToken(new BoolVariant(true));
+            yield return new Token(TokenType.Newline, 1);
+
+            // Ignore mouse movement for the check, could get annoying on Steam Deck
+
+            // elif not event is InputEventMouseMotion: UsingController = false
+            yield return new Token(TokenType.CfElif);
+            yield return new Token(TokenType.OpNot);
+            yield return new IdentifierToken("event");
+            yield return new Token(TokenType.PrIs);
+            yield return new IdentifierToken("InputEventMouseMotion");
+            yield return new Token(TokenType.Colon);
+            yield return new IdentifierToken(UsingController);
+            yield return new Token(TokenType.OpAssign);
+            yield return new ConstantToken(new BoolVariant(false));
+            yield return new Token(TokenType.Newline, 1);
+        }
+
+        private IEnumerable<Token> PatchLandVibration() {
+            // if is_on_floor() and in_air:
+            yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken("is_on_floor");
+            yield return new Token(TokenType.ParenthesisOpen);
+            yield return new Token(TokenType.ParenthesisClose);
+            yield return new Token(TokenType.OpAnd);
+            yield return new IdentifierToken("in_air");
+            yield return new Token(TokenType.Colon);
+            yield return new Token(TokenType.Newline, 2);
+
+            // if not diving: Input.start_joy_vibration(0, 0.5, 0, 0.15)
+            yield return new Token(TokenType.CfIf);
+            yield return new Token(TokenType.OpNot);
+            yield return new IdentifierToken("diving");
+            yield return new Token(TokenType.Colon);
+            foreach (var t in VibrateController(0.5, 0, 0.15)) yield return t;
+            yield return new Token(TokenType.Newline, 2);
+
+            // else: Input.start_joy_vibration(0, 0, 0.5, 0.25)
+            yield return new Token(TokenType.CfElse);
+            yield return new Token(TokenType.Colon);
+            foreach (var t in VibrateController(0, 0.5, 0.25)) yield return t;
             yield return new Token(TokenType.Newline, 1);
         }
 
@@ -711,5 +758,138 @@ public class ControllerInput {
             yield return new ConstantToken(new StringVariant(action));
             yield return new Token(TokenType.ParenthesisClose);
         }
+    }
+
+    public class Fishing3Modifier : ScriptMod {
+        public override bool ShouldRun(string path) => path == "res://Scenes/Minigames/Fishing3/fishing3.gdc";
+
+        public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+            var physicsProcessWaiter = new TokenWaiter(
+                t => t.Type is TokenType.Newline && t.AssociatedData is 1,
+                waitForReady: true
+            );
+            var isReelSoundLine = false;
+            var onButtonPressed = new TokenWaiter(
+                t => t.Type is TokenType.Newline && t.AssociatedData is 1,
+                waitForReady: true
+            );
+            var isDamageLine = false;
+
+            foreach (var token in tokens) {
+                if (token is {Type: TokenType.PrVar}) isReelSoundLine = true;
+                if (isReelSoundLine) {
+                    if (token is IdentifierToken {Name: "reel_sound"}) {
+                        physicsProcessWaiter.SetReady();
+                    } else if (token.Type is TokenType.Newline) {
+                        isReelSoundLine = false;
+                    }
+                }
+
+                if (token is IdentifierToken {Name: "ys"}) isDamageLine = true;
+                if (isDamageLine) {
+                    if (token is ConstantToken {Value: StringVariant {Value: "damage"}}) {
+                        onButtonPressed.SetReady();
+                    } else if (token.Type is TokenType.Newline) {
+                        isDamageLine = false;
+                    }
+                }
+
+                if (physicsProcessWaiter.Check(token)) {
+                    yield return new Token(TokenType.Newline, 1);
+                    if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchReelVibration()) yield return t;
+                } else if (onButtonPressed.Check(token)) {
+                    yield return new Token(TokenType.Newline, 1);
+                    //if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchYankVibration()) yield return t;
+                } else {
+                    yield return token;
+                }
+            }
+        }
+
+        private IEnumerable<Token> PatchReelVibration() {
+            // this sucks
+            // if reeling and main_progress < end_goal and active and thrash_timer <= 0 and not at_yank: Input.start_joy_vibration(0, 0.2, 0, 0.1)
+            yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken("reeling");
+            yield return new Token(TokenType.OpAnd);
+            yield return new IdentifierToken("main_progress");
+            yield return new Token(TokenType.OpLess);
+            yield return new IdentifierToken("end_goal");
+            yield return new Token(TokenType.OpAnd);
+            yield return new IdentifierToken("active");
+            yield return new Token(TokenType.OpAnd);
+            yield return new IdentifierToken("thrash_timer");
+            yield return new Token(TokenType.OpLessEqual);
+            yield return new ConstantToken(new IntVariant(0));
+            yield return new Token(TokenType.OpAnd);
+            yield return new Token(TokenType.OpNot);
+            yield return new IdentifierToken("at_yank");
+            yield return new Token(TokenType.Colon);
+            foreach (var t in VibrateController(0.2, 0, 0.1)) yield return t;
+            yield return new Token(TokenType.Newline, 1);
+        }
+
+        // The yank vibration is overridden by the reeling vibration.
+        // I think the reeling vibration is more important so buhbye!
+        // FIXME one day I guess
+        /*
+        private IEnumerable<Token> PatchYankVibration() {
+            // if ys.health <= 0:
+            yield return new Token(TokenType.CfIf);
+            yield return new IdentifierToken("ys");
+            yield return new Token(TokenType.Period);
+            yield return new IdentifierToken("health");
+            yield return new Token(TokenType.OpLessEqual);
+            yield return new ConstantToken(new IntVariant(0));
+            yield return new Token(TokenType.Colon);
+            yield return new Token(TokenType.Newline, 2);
+
+            // print("yank vibration: KILLED IT")
+            foreach (var t in BuiltInPrintShort("yank vibration: KILLED IT")) yield return t;
+            yield return new Token(TokenType.Newline, 2);
+
+            // Input.start_joy_vibration(0, 0, 0.75, 0.2)
+            foreach (var t in VibrateController(0, 0.75, 0.2)) yield return t;
+            yield return new Token(TokenType.Newline, 1);
+
+            // else:
+            yield return new Token(TokenType.CfElse);
+            yield return new Token(TokenType.Colon);
+            yield return new Token(TokenType.Newline, 2);
+
+            // print("yank vibration: working on it")
+            foreach (var t in BuiltInPrintShort("yank vibration: working on it")) yield return t;
+            yield return new Token(TokenType.Newline, 2);
+
+            // Input.start_joy_vibration(0, 0, 0.4, 0.2)
+            foreach (var t in VibrateController(0, 0.4, 0.2)) yield return t;
+            yield return new Token(TokenType.Newline, 1);
+        }
+        */
+    }
+
+    private static IEnumerable<Token> BuiltInPrintShort(string txt) {
+        yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.TextPrint);
+        yield return new Token(TokenType.ParenthesisOpen);
+        yield return new ConstantToken(new StringVariant(txt));
+        yield return new Token(TokenType.ParenthesisClose);
+    }
+
+    private static double CalcVibration(double toCalc) => toCalc * GDWeave.Config.ControllerVibrationStrength;
+
+    private static IEnumerable<Token> VibrateController(double weak, double strong, double duration) {
+        // Input.start_joy_vibration(-1, weak, strong, duration)
+        yield return new IdentifierToken("Input");
+        yield return new Token(TokenType.Period);
+        yield return new IdentifierToken("start_joy_vibration");
+        yield return new Token(TokenType.ParenthesisOpen);
+        yield return new ConstantToken(new IntVariant(0));
+        yield return new Token(TokenType.Comma);
+        yield return new ConstantToken(new RealVariant(CalcVibration(weak)));
+        yield return new Token(TokenType.Comma);
+        yield return new ConstantToken(new RealVariant(CalcVibration(strong)));
+        yield return new Token(TokenType.Comma);
+        yield return new ConstantToken(new RealVariant(duration));
+        yield return new Token(TokenType.ParenthesisClose);
     }
 }

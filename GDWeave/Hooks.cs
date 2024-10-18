@@ -28,6 +28,7 @@ public unsafe class Hooks {
         if (GDWeave.Config.ControllerSupport) {
             mods.Add(new ControllerInput.InputRegister());
             mods.Add(new ControllerInput.PlayerModifier());
+            mods.Add(new ControllerInput.Fishing3Modifier());
         }
 
         Modder = new ScriptModder(mods);

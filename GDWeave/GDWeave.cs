@@ -18,6 +18,8 @@ public class GDWeave {
 
         Config = GetConfig();
         Console.WriteLine($"GDWeave: Controller support is {(Config.ControllerSupport ? "enabled" : "disabled")}");
+        Console.WriteLine($"GDWeave: Controller vibration is {(Config.ControllerVibration ? "enabled" : "disabled")}");
+        Console.WriteLine($"GDWeave: Controller vibration strength is {Config.ControllerVibrationStrength}");
 
         Interop = new Interop();
         Hooks = new Hooks(Interop);
