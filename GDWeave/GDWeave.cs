@@ -1,10 +1,13 @@
 ﻿// ReSharper disable InconsistentNaming
 
+using System.Reflection;
 using System.Text.Json;
 
 namespace GDWeave;
 
 public class GDWeave {
+    public static readonly string Version = Assembly.GetExecutingAssembly().GetName().Version!.ToString();
+
     public delegate void MainDelegate();
 
     public static Config Config = null!;
@@ -15,6 +18,8 @@ public class GDWeave {
         if (Environment.GetEnvironmentVariable("GDWEAVE_DEBUG") is not null) {
             ConsoleFixer.Init();
         }
+
+        Console.WriteLine($"GDWeave v{Version}");
 
         Config = GetConfig();
         Console.WriteLine($"GDWeave: Controller support is {(Config.ControllerSupport ? "enabled" : "disabled")}");
@@ -27,30 +32,34 @@ public class GDWeave {
 
     public static Config GetConfig() {
         var configPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, "gdweave.json");
-        if (!File.Exists(configPath)) {
-            var defaultConfig = new Config();
-            string? defaultConfigJson = null;
+        return !File.Exists(configPath) ? CreateConfigFile(configPath) : ReadConfigFile(configPath);
+    }
 
-            try {
-                defaultConfigJson = JsonSerializer.Serialize(defaultConfig);
-            } catch (Exception e) {
-                Console.WriteLine($"GDWeave: Failed to serialize default config, not creating the file: {e.Message}");
-            }
+    private static Config CreateConfigFile(string configPath) {
+        var defaultConfig = new Config();
+        string? defaultConfigJson = null;
 
-            if (defaultConfigJson is not null && defaultConfigJson != "null") {
-                try {
-                    var configFile = File.CreateText(configPath);
-                    configFile.Write(defaultConfigJson);
-                    configFile.Close();
-                    Console.WriteLine("GDWeave: Created new config file");
-                } catch (Exception e) {
-                    Console.WriteLine($"GDWeave: Failed to create config file: {e.Message}");
-                }
-            }
-
-            return defaultConfig;
+        try {
+            defaultConfigJson = JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions {WriteIndented = true});
+        } catch (Exception e) {
+            Console.WriteLine($"GDWeave: Failed to serialize default config, not creating the file: {e.Message}");
         }
 
+        if (defaultConfigJson is not null && defaultConfigJson != "null") {
+            try {
+                var configFile = File.CreateText(configPath);
+                configFile.Write(defaultConfigJson);
+                configFile.Close();
+                Console.WriteLine("GDWeave: Created new config file");
+            } catch (Exception e) {
+                Console.WriteLine($"GDWeave: Failed to create config file: {e.Message}");
+            }
+        }
+
+        return defaultConfig;
+    }
+
+    private static Config ReadConfigFile(string configPath) {
         try {
             var json = File.ReadAllText(configPath);
             var config = JsonSerializer.Deserialize<Config>(json);

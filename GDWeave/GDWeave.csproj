@@ -4,6 +4,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Version>1.2.0</Version>
 
         <!-- required for loader -->
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>

@@ -852,9 +852,9 @@ public class ControllerInput {
             yield return new Token(TokenType.Newline, 1);
         }
 
+        // TODO:
         // The yank vibration is overridden by the reeling vibration.
         // I think the reeling vibration is more important so buhbye!
-        // FIXME one day I guess
         /*
         private IEnumerable<Token> PatchYankVibration() {
             // if ys.health <= 0:

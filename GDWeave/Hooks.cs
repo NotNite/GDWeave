@@ -22,6 +22,7 @@ public unsafe class Hooks {
 
     public Hooks(Interop interop) {
         List<ScriptMod> mods = [
+            new MenuTweaks(),
             new SteamHacked(),
         ];
 
