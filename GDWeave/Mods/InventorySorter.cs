@@ -86,6 +86,7 @@ public class InventorySorter : ScriptMod {
         yield return new Token(TokenType.Colon);
         yield return new Token(TokenType.Newline, 2);
 
+        /*
         // print(a, b)
         yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.TextPrint);
         yield return new Token(TokenType.ParenthesisOpen);
@@ -94,6 +95,7 @@ public class InventorySorter : ScriptMod {
         yield return new IdentifierToken("b");
         yield return new Token(TokenType.ParenthesisClose);
         yield return new Token(TokenType.Newline, 2);
+        */
 
         // return a["id"] < b["id"]
         yield return new Token(TokenType.CfReturn);

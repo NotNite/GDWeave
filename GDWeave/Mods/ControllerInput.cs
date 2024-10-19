@@ -231,7 +231,6 @@ public class ControllerInput {
         private const string WishSprint = "gdweave_wish_sprint";
         private const string WishWalk = "gdweave_wish_walk";
         private const string CurrentHotbar = "gdweave_current_hotbar";
-        private const string ZoomControlPressed = "gdweave_zoom_control_pressed";
 
         public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var customHeldItemWaiter = new TokenWaiter(
@@ -257,9 +256,16 @@ public class ControllerInput {
             );
             var rodCastDistWaiter = new MultiTokenWaiter([
                 t => t is IdentifierToken {Name: "rod_cast_dist"},
+                t => t.Type is TokenType.OpAssignSub,
+                t => t is ConstantToken {Value: RealVariant {Value: 0.04}},
+                t => t.Type is TokenType.CfIf,
+                t => t is IdentifierToken {Name: "Input"},
+                t => t.Type is TokenType.Period,
+                t => t is IdentifierToken {Name: "is_action_pressed"},
+                t => t.Type is TokenType.ParenthesisOpen,
                 t => t is ConstantToken {Value: StringVariant {Value: "move_sprint"}},
                 t => t.Type is TokenType.ParenthesisClose,
-            ], allowPartialMatch: true);
+            ]);
 
             foreach (var token in tokens) {
                 if (token is IdentifierToken {Name: "custom_held_item"}) customHeldItemWaiter.SetReady();
@@ -413,58 +419,35 @@ public class ControllerInput {
         }
 
         private IEnumerable<Token> PatchZoomControl() {
-            const string tabNextPressed = "gdweave_tab_next_pressed";
-            const string tabPreviousPressed = "gdweave_tab_previous_pressed";
             const string cameraZoom = "camera_zoom";
             const double zoomAmount = 0.2;
 
-            // var ZoomControlPressed = Input.is_action_pressed(ZoomControl)
-            yield return new Token(TokenType.PrVar);
-            yield return new IdentifierToken(ZoomControlPressed);
-            yield return new Token(TokenType.OpAssign);
-            foreach (var t in this.IsActionPressedShort(ZoomControl)) yield return t;
-            yield return new Token(TokenType.Newline, 1);
-
-            // var tabNextPressed = Input.is_action_pressed(TabNext)
-            yield return new Token(TokenType.PrVar);
-            yield return new IdentifierToken(tabNextPressed);
-            yield return new Token(TokenType.OpAssign);
-            foreach (var t in this.IsActionPressedShort(TabNext)) yield return t;
-            yield return new Token(TokenType.Newline, 1);
-
-            // var tabPreviousPressed = Input.is_action_pressed(TabPrevious)
-            yield return new Token(TokenType.PrVar);
-            yield return new IdentifierToken(tabPreviousPressed);
-            yield return new Token(TokenType.OpAssign);
-            foreach (var t in this.IsActionPressedShort(TabPrevious)) yield return t;
-            yield return new Token(TokenType.Newline, 1);
-
-            // if UsingController and ZoomControlPressed:
+            // if UsingController and Input.is_action_pressed(ZoomControl):
             yield return new Token(TokenType.CfIf);
             yield return new IdentifierToken(UsingController);
             yield return new Token(TokenType.OpAnd);
-            yield return new IdentifierToken(ZoomControlPressed);
+            foreach (var t in this.IsActionPressedShort(ZoomControl)) yield return t;
             yield return new Token(TokenType.Colon);
             yield return new Token(TokenType.Newline, 2);
 
-            // if tabNextPressed and not tabPreviousPressed: CameraZoom += 0.3
+            // if Input.is_action_pressed(TabNext) and not Input.is_action_pressed(TabPrevious): CameraZoom += 0.3
             yield return new Token(TokenType.CfIf);
-            yield return new IdentifierToken(tabNextPressed);
+            foreach (var t in this.IsActionPressedShort(TabNext)) yield return t;
             yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
-            yield return new IdentifierToken(tabPreviousPressed);
+            foreach (var t in this.IsActionPressedShort(TabPrevious)) yield return t;
             yield return new Token(TokenType.Colon);
             yield return new IdentifierToken(cameraZoom);
             yield return new Token(TokenType.OpAssignAdd);
             yield return new ConstantToken(new RealVariant(zoomAmount));
             yield return new Token(TokenType.Newline, 2);
 
-            // if tabPreviousPressed and not tabNextPressed: CameraZoom -= 0.3
+            // if Input.is_action_pressed(TabPrevious) and not Input.is_action_pressed(TabNext): CameraZoom -= 0.3
             yield return new Token(TokenType.CfIf);
-            yield return new IdentifierToken(tabPreviousPressed);
+            foreach (var t in this.IsActionPressedShort(TabPrevious)) yield return t;
             yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
-            yield return new IdentifierToken(tabNextPressed);
+            foreach (var t in this.IsActionPressedShort(TabNext)) yield return t;
             yield return new Token(TokenType.Colon);
             yield return new IdentifierToken(cameraZoom);
             yield return new Token(TokenType.OpAssignSub);
@@ -477,12 +460,12 @@ public class ControllerInput {
             const int hotbarMin = 0;
             const int hotbarMax = 4;
 
-            // if UsingController and not ZoomControlPressed and not locked and state == STATES.DEFAULT:
+            // if UsingController and not Input.is_action_pressed(ZoomControl) and not locked and state == STATES.DEFAULT:
             yield return new Token(TokenType.CfIf);
             yield return new IdentifierToken(UsingController);
             yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
-            yield return new IdentifierToken(ZoomControlPressed);
+            foreach (var t in this.IsActionPressedShort(ZoomControl)) yield return t;
             yield return new Token(TokenType.OpAnd);
             yield return new Token(TokenType.OpNot);
             yield return new IdentifierToken("locked");
@@ -786,16 +769,18 @@ public class ControllerInput {
             foreach (var token in tokens) {
                 if (reelSoundWaiter.Check(token)) {
                     yield return token;
-                    if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchReelVibration()) yield return t;
+                    //if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchReelVibration()) yield return t;
                 } else if (yankWaiter.Check(token)) {
                     yield return token;
-                    //if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchYankVibration()) yield return t;
+                    if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchYankVibration()) yield return t;
                 } else {
                     yield return token;
                 }
             }
         }
 
+        // TODO: Figure out a way to have both reeling and yanking vibration work together properly
+        /*
         private IEnumerable<Token> PatchReelVibration() {
             // this sucks
             // if reeling and main_progress < end_goal and active and thrash_timer <= 0 and not at_yank: Input.start_joy_vibration(0, 0.2, 0, 0.1)
@@ -818,14 +803,8 @@ public class ControllerInput {
             foreach (var t in VibrateController(0.2, 0, 0.1)) yield return t;
             yield return new Token(TokenType.Newline, 1);
         }
+        */
 
-        // TODO:
-        // The yank vibration is overridden by the reeling vibration.
-        // I think the reeling vibration is more important so buhbye!
-        //
-        // ...seems like vibration is a lot less intense on Steam Deck though,
-        // and it doesn't like constant vibration so the reeling one gets cut off.
-        /*
         private IEnumerable<Token> PatchYankVibration() {
             // if ys.health <= 0:
             yield return new Token(TokenType.CfIf);
@@ -858,7 +837,6 @@ public class ControllerInput {
             foreach (var t in VibrateController(0, 0.4, 0.2)) yield return t;
             yield return new Token(TokenType.Newline, 1);
         }
-        */
     }
 
     private static IEnumerable<Token> BuiltInPrintShort(string txt) {
