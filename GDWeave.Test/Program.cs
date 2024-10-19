@@ -25,6 +25,8 @@ if (args.Length == 2 && args[0] == "parse") {
     for (var i = 0; i < hls.Count; i++) {
         Console.WriteLine($"  {i}: {hls[i]}");
     }
+
+    return;
 }
 
 // Lol sorry
@@ -43,6 +45,7 @@ const string outputPath = "D:/gdsc_out.bin";
 
     using var output = File.OpenWrite(outputPath);
     using var bw = new BinaryWriter(output);
+
     gdsc.Write(bw);
 }
 

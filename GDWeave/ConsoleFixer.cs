@@ -12,8 +12,10 @@ public class ConsoleFixer {
     private static extern bool AttachConsole(int pid);
 
     public static void Init() {
-        AllocConsole();
-        AttachConsole(-1);
+        if (Environment.GetEnvironmentVariable("GDWEAVE_DEBUG") is not null) {
+            AllocConsole();
+            AttachConsole(-1);
+        }
 
         var stdout = new StreamWriter(Console.OpenStandardOutput()) {AutoFlush = true};
         Console.SetOut(stdout);

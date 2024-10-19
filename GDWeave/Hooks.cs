@@ -21,15 +21,20 @@ public unsafe class Hooks {
     public static ScriptModder Modder = null!;
 
     public Hooks(Interop interop) {
-        List<ScriptMod> mods = [
-            new MenuTweaks(),
-            new SteamHacked(),
-        ];
+        List<ScriptMod> mods = [];
+
+        if (GDWeave.Config.MenuTweaks) {
+            mods.Add(new MenuTweaks());
+        }
 
         if (GDWeave.Config.ControllerSupport) {
             mods.Add(new ControllerInput.InputRegister());
             mods.Add(new ControllerInput.PlayerModifier());
             mods.Add(new ControllerInput.Fishing3Modifier());
+        }
+
+        if (GDWeave.Config.SortInventory) {
+            mods.Add(new InventorySorter());
         }
 
         Modder = new ScriptModder(mods);
