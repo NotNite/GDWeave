@@ -80,7 +80,7 @@ public class ControllerInput {
                 if (token is IdentifierToken {Name: "_ready"}) readyWaiter.SetReady();
 
                 if (readyWaiter.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                    yield return token;
 
                     foreach (var t in this.HandleStick(LookLeft, JoyAxis.RightX, -1)) yield return t;
                     foreach (var t in this.HandleStick(LookRight, JoyAxis.RightX, 1)) yield return t;
@@ -114,7 +114,7 @@ public class ControllerInput {
                     foreach (var t in this.HandleButton(ToggleSprint, JoyButton.LeftStickIn)) yield return t;
                     foreach (var t in this.HandleButton(ToggleWalk, JoyButton.RightStickIn)) yield return t;
 
-                    yield return new Token(TokenType.Newline, 1);
+                    yield return token;
                 } else {
                     yield return token;
                 }
@@ -242,11 +242,11 @@ public class ControllerInput {
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
             );
-            var sprintingWaiter = new TokenWaiter(
+            var sprintingWaiter = new MultiTokenWaiter([
+                t => t is IdentifierToken {Name: "slow_walking"},
+                t => t is ConstantToken {Value: StringVariant {Value: "move_walk"}},
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
-                waitForReady: true
-            );
-            var isSlowWalkingLine = false;
+            ], allowPartialMatch: true);
             var inputWaiter = new TokenWaiter(
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
@@ -255,56 +255,38 @@ public class ControllerInput {
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
             );
-            var rodCastDistWaiter = new TokenWaiter(
+            var rodCastDistWaiter = new MultiTokenWaiter([
+                t => t is IdentifierToken {Name: "rod_cast_dist"},
+                t => t is ConstantToken {Value: StringVariant {Value: "move_sprint"}},
                 t => t.Type is TokenType.ParenthesisClose,
-                waitForReady: true
-            );
-            var isSprintReelLine = false;
+            ], allowPartialMatch: true);
 
             foreach (var token in tokens) {
-                if (token is IdentifierToken {Name: "slow_walking"}) isSlowWalkingLine = true;
-                if (isSlowWalkingLine) {
-                    if (token is ConstantToken {Value: StringVariant {Value: "move_walk"}}) {
-                        sprintingWaiter.SetReady();
-                    } else if (token.Type is TokenType.Newline) {
-                        isSlowWalkingLine = false;
-                    }
-                }
-
-                if (token is IdentifierToken {Name: "rod_cast_dist"}) isSprintReelLine = true;
-                if (isSprintReelLine) {
-                    if (token is ConstantToken {Value: StringVariant {Value: "move_sprint"}}) {
-                        rodCastDistWaiter.SetReady();
-                    } else if (token.Type is TokenType.Newline) {
-                        isSprintReelLine = false;
-                    }
-                }
-
                 if (token is IdentifierToken {Name: "custom_held_item"}) customHeldItemWaiter.SetReady();
                 if (token is ConstantToken {Value: StringVariant {Value: "bind_5"}}) bind5Waiter.SetReady();
                 if (token is IdentifierToken {Name: "_input"}) inputWaiter.SetReady();
                 if (token is IdentifierToken {Name: "_process_movement"}) processMovementWaiter.SetReady();
 
                 if (customHeldItemWaiter.Check(token)) {
-                    yield return new Token(TokenType.Newline);
+                    yield return token;
                     foreach (var t in this.PatchSetupPlayerVars()) yield return t;
                 } else if (bind5Waiter.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                    yield return token;
                     foreach (var t in this.PatchLook()) yield return t;
                     foreach (var t in this.PatchZoomControl()) yield return t;
                     foreach (var t in this.PatchHotbarControl()) yield return t;
                 } else if (sprintingWaiter.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                    yield return token;
                     foreach (var t in this.PatchAnalogMovement()) yield return t;
                     foreach (var t in this.PatchToggleMovement()) yield return t;
                 } else if (inputWaiter.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                    yield return token;
                     foreach (var t in this.PatchCheckController()) yield return t;
                 } else if (processMovementWaiter.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                    yield return token;
                     if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchLandVibration()) yield return t;
                 } else if (rodCastDistWaiter.Check(token)) {
-                    yield return new Token(TokenType.ParenthesisClose, 1);
+                    yield return token;
                     foreach (var t in this.PatchSprintReel()) yield return t;
                 } else {
                     yield return token;
@@ -787,41 +769,26 @@ public class ControllerInput {
         public override bool ShouldRun(string path) => path == "res://Scenes/Minigames/Fishing3/fishing3.gdc";
 
         public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
-            var physicsProcessWaiter = new TokenWaiter(
+            var reelSoundWaiter = new MultiTokenWaiter([
+                t => t.Type is TokenType.PrVar,
+                t => t is IdentifierToken {Name: "reel_sound"},
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
-                waitForReady: true
-            );
-            var isReelSoundLine = false;
-            var onButtonPressed = new TokenWaiter(
+            ], allowPartialMatch: true);
+            var yankWaiter = new MultiTokenWaiter([
+                t => t.Type is TokenType.OpAssignSub,
+                t => t is IdentifierToken {Name: "params"},
+                t => t.Type is TokenType.BracketOpen,
+                t => t is ConstantToken {Value: StringVariant {Value: "damage"}},
+                t => t.Type is TokenType.BracketClose,
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
-                waitForReady: true
-            );
-            var isDamageLine = false;
+            ]);
 
             foreach (var token in tokens) {
-                if (token is {Type: TokenType.PrVar}) isReelSoundLine = true;
-                if (isReelSoundLine) {
-                    if (token is IdentifierToken {Name: "reel_sound"}) {
-                        physicsProcessWaiter.SetReady();
-                    } else if (token.Type is TokenType.Newline) {
-                        isReelSoundLine = false;
-                    }
-                }
-
-                if (token is IdentifierToken {Name: "ys"}) isDamageLine = true;
-                if (isDamageLine) {
-                    if (token is ConstantToken {Value: StringVariant {Value: "damage"}}) {
-                        onButtonPressed.SetReady();
-                    } else if (token.Type is TokenType.Newline) {
-                        isDamageLine = false;
-                    }
-                }
-
-                if (physicsProcessWaiter.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                if (reelSoundWaiter.Check(token)) {
+                    yield return token;
                     if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchReelVibration()) yield return t;
-                } else if (onButtonPressed.Check(token)) {
-                    yield return new Token(TokenType.Newline, 1);
+                } else if (yankWaiter.Check(token)) {
+                    yield return token;
                     //if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchYankVibration()) yield return t;
                 } else {
                     yield return token;
