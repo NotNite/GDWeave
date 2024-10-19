@@ -855,6 +855,9 @@ public class ControllerInput {
         // TODO:
         // The yank vibration is overridden by the reeling vibration.
         // I think the reeling vibration is more important so buhbye!
+        //
+        // ...seems like vibration is a lot less intense on Steam Deck though,
+        // and it doesn't like constant vibration so the reeling one gets cut off.
         /*
         private IEnumerable<Token> PatchYankVibration() {
             // if ys.health <= 0:

@@ -95,7 +95,7 @@ public class InventorySorter : ScriptMod {
         yield return new Token(TokenType.ParenthesisClose);
         yield return new Token(TokenType.Newline, 2);
 
-        //     return a["id"] < b["id"]
+        // return a["id"] < b["id"]
         yield return new Token(TokenType.CfReturn);
         yield return new IdentifierToken("a");
         yield return new Token(TokenType.BracketOpen);
@@ -122,6 +122,7 @@ public class InventorySorter : ScriptMod {
     }
 
     private IEnumerable<Token> CallCosmeticSorter() {
+        // cosmetics_unlocked.sort()
         yield return new IdentifierToken("cosmetics_unlocked");
         yield return new Token(TokenType.Period);
         yield return new IdentifierToken("sort");

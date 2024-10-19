@@ -24,7 +24,8 @@ public unsafe class Hooks {
         List<ScriptMod> mods = [];
 
         if (GDWeave.Config.MenuTweaks) {
-            mods.Add(new MenuTweaks());
+            mods.Add(new MenuTweaks.MainMenuModifier());
+            mods.Add(new MenuTweaks.EscMenuModifier());
         }
 
         if (GDWeave.Config.ControllerSupport) {

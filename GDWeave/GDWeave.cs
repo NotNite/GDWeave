@@ -39,7 +39,7 @@ public class GDWeave {
 
         try {
             var configFile = File.CreateText(configPath);
-            configFile.Write(JsonSerializer.Serialize(defaultConfig));
+            configFile.Write(JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions {WriteIndented = true}));
             configFile.Close();
         } catch (Exception e) {
             Console.WriteLine($"GDWeave: Failed to create config file: {e.Message}");
