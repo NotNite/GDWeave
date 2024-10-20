@@ -5,7 +5,7 @@ GDWeave is an experimental runtime patching system for compiled GDScript bytecod
 ## Installation
 
 - Download [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
-  - If you're playing on Linux, this needs to be installed in the Wine/Proton prefix. Use something like [protontricks](https://github.com/Matoking/protontricks) to run the Windows installer under Proton.
+  - If you're playing on Linux, this needs to be installed in the Wine/Proton prefix. The loader should prompt you to do it automatically.
 - Download [the latest release](https://github.com/NotNite/GDWeave/releases) and extract it to your game install.
 - Start the game.
   - If you're playing on Linux, add `WINEDLLOVERRIDES="winmm=n,b" %command%` to the Steam launch options.
