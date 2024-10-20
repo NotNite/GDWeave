@@ -35,7 +35,30 @@ internal class PackFileLoader(List<LoadedMod> mods) : IScriptMod {
                     yield return new Token(TokenType.ParenthesisClose);
                     yield return token;
 
-                    // 	get_tree().get_root().call_deferred("add_child", load("res://mods/mod.Manifest.Id/main.gd").new())
+                    // var mod.Manifest.Id = load("res://mods/mod.Manifest.Id/main.gd").new()
+                    yield return new Token(TokenType.PrVar);
+                    yield return new IdentifierToken($"{mod.Manifest.Id}");
+                    yield return new Token(TokenType.OpAssign);
+                    yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.ResourceLoad);
+                    yield return new Token(TokenType.ParenthesisOpen);
+                    yield return new ConstantToken(new StringVariant($"res://mods/{mod.Manifest.Id}/main.gd"));
+                    yield return new Token(TokenType.ParenthesisClose);
+                    yield return new Token(TokenType.Period);
+                    yield return new IdentifierToken("new");
+                    yield return new Token(TokenType.ParenthesisOpen);
+                    yield return new Token(TokenType.ParenthesisClose);
+                    yield return token;
+
+                    // mod.Manifest.Id.set_name("mod.Manifest.Id")
+                    yield return new IdentifierToken($"{mod.Manifest.Id}");
+                    yield return new Token(TokenType.Period);
+                    yield return new IdentifierToken("set_name");
+                    yield return new Token(TokenType.ParenthesisOpen);
+                    yield return new ConstantToken(new StringVariant($"{mod.Manifest.Id}"));
+                    yield return new Token(TokenType.ParenthesisClose);
+                    yield return token;
+
+                    // get_tree().get_root().call_deferred("add_child", mod.Manifest.Id)
                     yield return new IdentifierToken("get_tree");
                     yield return new Token(TokenType.ParenthesisOpen);
                     yield return new Token(TokenType.ParenthesisClose);
@@ -48,14 +71,7 @@ internal class PackFileLoader(List<LoadedMod> mods) : IScriptMod {
                     yield return new Token(TokenType.ParenthesisOpen);
                     yield return new ConstantToken(new StringVariant("add_child"));
                     yield return new Token(TokenType.Comma);
-                    yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.ResourceLoad);
-                    yield return new Token(TokenType.ParenthesisOpen);
-                    yield return new ConstantToken(new StringVariant($"res://mods/{mod.Manifest.Id}/main.gd"));
-                    yield return new Token(TokenType.ParenthesisClose);
-                    yield return new Token(TokenType.Period);
-                    yield return new IdentifierToken("new");
-                    yield return new Token(TokenType.ParenthesisOpen);
-                    yield return new Token(TokenType.ParenthesisClose);
+                    yield return new IdentifierToken($"{mod.Manifest.Id}");
                     yield return new Token(TokenType.ParenthesisClose);
                     yield return token;
                 }
