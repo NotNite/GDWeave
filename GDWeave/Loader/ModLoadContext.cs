@@ -8,6 +8,9 @@ public class ModLoadContext(string path) : AssemblyLoadContext(isCollectible: tr
 
     protected override Assembly Load(AssemblyName assemblyName) {
         if (assemblyName.Name == "GDWeave") return GDWeave.Assembly;
+        var existing = GDWeave.Assembly.GetReferencedAssemblies().FirstOrDefault(a => a.Name == assemblyName.Name);
+        if (existing is not null) return Assembly.Load(existing);
+
         var assemblyPath = this.resolver.ResolveAssemblyToPath(assemblyName);
         if (assemblyPath is null) return null!;
 

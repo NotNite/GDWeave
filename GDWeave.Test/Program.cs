@@ -23,8 +23,8 @@ if (args is ["parse", _]) {
     }
 
     Console.WriteLine($"Tokens: {gdsc.Tokens.Count}");
-    var hls = ScriptModder.CreateSpecialTokens(gdsc);
-    for (var i = 0; i < hls.Count; i++) {
-        Console.WriteLine($"  {i}: {hls[i]}");
+    var tokens = ScriptModder.CreateSpecialTokens(gdsc);
+    for (var i = 0; i < tokens.Count; i++) {
+        Console.WriteLine($"  {i}: {tokens[i]}");
     }
 }

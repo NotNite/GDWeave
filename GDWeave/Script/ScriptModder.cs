@@ -61,12 +61,12 @@ public class ScriptModder(List<IScriptMod>? mods = null) {
                     TokenType.Identifier when token.AssociatedData is not null => new IdentifierToken(
                         token.Type,
                         token.AssociatedData,
-                        file.Identifiers[(int) token.AssociatedData!.Value]
+                        file.Identifiers[(int) (token.AssociatedData ?? 0)]
                     ),
-                    TokenType.Constant when token.AssociatedData is not null => new ConstantToken(
+                    TokenType.Constant => new ConstantToken(
                         token.Type,
                         token.AssociatedData,
-                        (Variant) file.Constants[(int) token.AssociatedData!.Value].Clone()
+                        (Variant) file.Constants[(int) (token.AssociatedData ?? 0)].Clone()
                     ),
                     _ => token
                 };

@@ -7,10 +7,10 @@ namespace GDWeave;
 
 internal class ModLoader {
     public List<LoadedMod> LoadedMods = new();
-    public List<IScriptMod> ScriptMods => this.scriptMods.Values.ToList();
+    public List<IScriptMod> ScriptMods => this.scriptMods.Values.SelectMany(x => x).ToList();
 
     private readonly ILogger logger = GDWeave.Logger.ForContext<ModLoader>();
-    private readonly Dictionary<string, IScriptMod> scriptMods = new();
+    private readonly Dictionary<string, List<IScriptMod>> scriptMods = new();
 
     public ModLoader() {
         this.Load();
@@ -108,6 +108,7 @@ internal class ModLoader {
     }
 
     public void RegisterScriptMod(string modId, IScriptMod mod) {
-        this.scriptMods[modId] = mod;
+        if (!this.scriptMods.ContainsKey(modId)) this.scriptMods[modId] = new();
+        this.scriptMods[modId].Add(mod);
     }
 }
