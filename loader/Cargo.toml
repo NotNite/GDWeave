@@ -8,6 +8,8 @@ crate-type = ["cdylib"]
 
 [dependencies]
 anyhow = "1.0.89"
-msgbox = "0.7.0"
+isahc = "1.7.2"
 netcorehost = "0.17.0"
 proxy-dll = "0.2.5"
+thiserror = "1.0.64"
+win-msgbox = "0.2.1"

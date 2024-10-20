@@ -7,4 +7,3 @@ Copy-Item -Path ./target/release/loader.dll -Destination ./local/GDWeave/winmm.d
 if (Test-Path ./local/GDWeave.zip) {
   Remove-Item ./local/GDWeave.zip
 }
-Compress-Archive -Path ./local/GDWeave/* -DestinationPath ./local/GDWeave.zip
