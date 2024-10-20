@@ -14,6 +14,7 @@ internal class ModLoader {
 
     public ModLoader() {
         this.Load();
+        this.Sort();
     }
 
     public void Load() {
@@ -51,6 +52,40 @@ internal class ModLoader {
                 this.logger.Warning(e, "Failed to load mod at {ModDir}", modDir);
             }
         }
+    }
+
+    private void Sort() {
+        var dependencyGraph = this.LoadedMods.ToDictionary(x => x.Manifest.Id, x => x.Manifest.Dependencies);
+        foreach (var (modId, dependencies) in dependencyGraph) {
+            foreach (var dependency in dependencies.ToList()
+                         .Where(dependency => !dependencyGraph.ContainsKey(dependency))) {
+                this.logger.Warning("Mod {ModId} depends on missing mod {Dependency}", modId, dependency);
+                break;
+            }
+        }
+
+        var resolvedOrder = new List<string>();
+        while (dependencyGraph.Count > 0) {
+            var noDependencies = dependencyGraph.Where(x => x.Value.Count == 0).ToList();
+            foreach (var (modId, _) in noDependencies) {
+                resolvedOrder.Add(modId);
+                dependencyGraph.Remove(modId);
+            }
+
+            foreach (var (_, dependencies) in dependencyGraph) {
+                foreach (var noDependency in noDependencies) {
+                    dependencies.Remove(noDependency.Key);
+                }
+            }
+
+            if (noDependencies.Count == 0) {
+                this.logger.Warning("Circular dependency detected: {CircularDependency}", dependencyGraph.Keys);
+                break;
+            }
+        }
+
+        this.logger.Debug("Resolved mod load order: {ResolvedOrder}", resolvedOrder);
+        this.LoadedMods = this.LoadedMods.OrderBy(x => resolvedOrder.IndexOf(x.Manifest.Id)).ToList();
     }
 
     private IMod? LoadAssembly(string id, string assemblyPath) {

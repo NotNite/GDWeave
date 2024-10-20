@@ -40,11 +40,20 @@ internal class GDWeave {
         if (File.Exists(logPath)) File.Delete(logPath);
 
         var config = new LoggerConfiguration()
-            .MinimumLevel.Verbose()
             .WriteTo.File(logPath)
             .WriteTo.Console();
+
+        if (Environment.GetEnvironmentVariable("GDWEAVE_DEBUG") is not null) {
+            config.MinimumLevel.Verbose();
+        } else {
+            config.MinimumLevel.Information();
+        }
+
         Logger = config.CreateLogger();
         Log.Logger = Logger;
+
+        const string github = "https://github.com/NotNite/GDWeave";
+        Logger.Information("This is GDWeave {Version} - {GitHub}", Version, github);
 
         ModLoader = new ModLoader();
         Interop = new Interop();
