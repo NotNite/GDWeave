@@ -32,6 +32,7 @@ public unsafe class Hooks {
             mods.Add(new ControllerInput.InputRegister());
             mods.Add(new ControllerInput.PlayerModifier());
             mods.Add(new ControllerInput.Fishing3Modifier());
+            mods.Add(new ControllerInput.InputRemapButtonModifier());
         }
 
         if (GDWeave.Config.SortInventory) {

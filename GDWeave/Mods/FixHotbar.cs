@@ -33,7 +33,6 @@ public class FixHotbar : ScriptMod {
             } else if (eraseMatch.Check(token)) {
                 yield return token;
 
-
                 // var replaceVar = 0
                 yield return new Token(TokenType.PrVar);
                 yield return new IdentifierToken(replaceVar);
