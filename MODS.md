@@ -28,4 +28,6 @@ Create a manifest.json with the following keys:
 
 For assets, GDWeave will load the specified pack file and execute `res://mods/<mod id>/main.gd`, where the mod ID is the ID specified in the manifest.
 
-For script manipulation, GDWeave will load the specified assembly and create the first class that inherits `IMod`. The constructor can take an optional `IModInterface`.
+For script manipulation, GDWeave will load the specified assembly and create the first class that inherits `IMod`. The constructor can take an optional `IModInterface`. You can see a sample C# mod [here](https://github.com/NotNite/GDWeave.Sample).
+
+C# modding is only required if you wish to patch existing scripts. Custom scripts and assets can be done purely in pack files. If working from a decompiled game project, specify include/exclude filters when exporting a .pck to only export the changed files and the `mods` directory.
