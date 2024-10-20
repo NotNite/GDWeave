@@ -15,6 +15,7 @@ public class Mod : IMod {
             modInterface.RegisterScriptMod(new ControllerInput.InputRegister());
             modInterface.RegisterScriptMod(new ControllerInput.PlayerModifier());
             modInterface.RegisterScriptMod(new ControllerInput.Fishing3Modifier());
+            modInterface.RegisterScriptMod(new ControllerInput.InputRemapButtonModifier());
         }
 
         if (Config.MenuTweaks) {
