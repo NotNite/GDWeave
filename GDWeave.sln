@@ -4,8 +4,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave", "GDWeave\GDWeave.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave.Test", "GDWeave.Test\GDWeave.Test.csproj", "{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebfishingPlus", "WebfishingPlus\WebfishingPlus.csproj", "{C7956ABA-E039-4B7B-8087-6993DAD54E77}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,9 +18,5 @@ Global
 		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C7956ABA-E039-4B7B-8087-6993DAD54E77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C7956ABA-E039-4B7B-8087-6993DAD54E77}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C7956ABA-E039-4B7B-8087-6993DAD54E77}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C7956ABA-E039-4B7B-8087-6993DAD54E77}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
