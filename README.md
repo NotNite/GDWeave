@@ -1,17 +1,16 @@
 # GDWeave
 
-GDWeave is an experimental runtime patching system for compiled GDScript bytecode + mods and patches for the game [WEBFISHING](https://store.steampowered.com/app/3146520/WEBFISHING/).
-
-**This is not a modloader!** This is a heavily specific system for one game (WEBFISHING) on one engine version (3.5.2) on one platform (Windows x64). It should be possible to fork for other bytecode versions, and expand into its own modloader, but that is not my current focus at this time.
+GDWeave is an experimental runtime patching system for compiled GDScript bytecode. It currently targets Godot 3.5.2 (for the game [WEBFISHING](https://store.steampowered.com/app/3146520/WEBFISHING/)).
 
 ## Installation
 
 - Download [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
-  - If you're playing on Linux, this needs to be installed in the Wine/Proton prefix.
-- Download [the latest release](https://github.com/NotNite/GDWeave/releases) and extract it to your WEBFISHING game install.
-- Edit the config file (e.g. to enable things like controller support).
+  - If you're playing on Linux, this needs to be installed in the Wine/Proton prefix. Use something like [protontricks](https://github.com/Matoking/protontricks) to run the Windows installer under Proton.
+- Download [the latest release](https://github.com/NotNite/GDWeave/releases) and extract it to your game install.
 - Start the game.
   - If you're playing on Linux, add `WINEDLLOVERRIDES="winmm=n,b" %command%` to the Steam launch options.
+
+See [here](MODS.md) for installing/creating mods.
 
 ## Why?
 
