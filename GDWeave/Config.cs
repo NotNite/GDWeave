@@ -9,4 +9,5 @@ public class Config {
 
     [JsonInclude] public bool MenuTweaks = true;
     [JsonInclude] public bool SortInventory;
+    [JsonInclude] public bool FixHotbar = true;
 }

@@ -38,6 +38,10 @@ public unsafe class Hooks {
             mods.Add(new InventorySorter());
         }
 
+        if (GDWeave.Config.FixHotbar) {
+            mods.Add(new FixHotbar());
+        }
+
         Modder = new ScriptModder(mods);
 
         var loadByteCodeAddr = interop.ScanText([
