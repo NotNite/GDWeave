@@ -1,4 +1,4 @@
-﻿namespace GDWeave.Parser.Variants;
+﻿namespace GDWeave.Godot.Variants;
 
 // Why does this exist
 public class NilVariant : Variant {

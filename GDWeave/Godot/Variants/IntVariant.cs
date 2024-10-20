@@ -1,4 +1,4 @@
-﻿namespace GDWeave.Parser.Variants;
+﻿namespace GDWeave.Godot.Variants;
 
 public class IntVariant : Variant {
     public long Value;

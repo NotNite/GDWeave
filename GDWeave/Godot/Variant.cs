@@ -1,4 +1,6 @@
-﻿namespace GDWeave.Parser;
+﻿// TODO: engine-dependent
+
+namespace GDWeave.Godot;
 
 public abstract class Variant : IEquatable<Variant>, ICloneable {
     public abstract void Write(VariantParser.ParserWriterContext ctx);

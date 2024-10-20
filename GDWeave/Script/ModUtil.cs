@@ -1,4 +1,6 @@
-﻿namespace GDWeave.Parser;
+﻿using GDWeave.Godot;
+
+namespace GDWeave.Modding;
 
 public interface IWaiter {
     public bool Matched { get; }

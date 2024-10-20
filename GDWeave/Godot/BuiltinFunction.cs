@@ -1,4 +1,6 @@
-﻿namespace GDWeave.Parser;
+﻿// TODO: engine-dependent
+
+namespace GDWeave.Godot;
 
 public enum BuiltinFunction : uint {
     MathSin,

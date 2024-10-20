@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace GDWeave;
+namespace WebfishingPlus;
 
 public class Config {
     [JsonInclude] public bool ControllerSupport;

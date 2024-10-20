@@ -1,7 +1,8 @@
-﻿using System.Text;
-using GDWeave.Parser.Variants;
+﻿// TODO: engine-dependent
 
-namespace GDWeave.Parser;
+using System.Text;
+
+namespace GDWeave.Godot;
 
 public class GodotScriptFile {
     public const uint Magic = 0x43534447;   // 'G', 'D', 'S', 'C'
@@ -30,7 +31,7 @@ public class GodotScriptFile {
             for (var j = 0; j < len; j++) bytes[j] ^= UselessXorKey;
 
             var str = Encoding.UTF8.GetString(bytes);
-            Utils.TrimNullTerminator(ref str);
+            MemoryUtils.TrimNullTerminator(ref str);
 
             this.Identifiers.Add(str);
         }

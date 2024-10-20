@@ -1,6 +1,8 @@
-﻿using GDWeave.Parser.Variants;
+﻿// TODO: engine-dependent
 
-namespace GDWeave.Parser;
+using GDWeave.Godot.Variants;
+
+namespace GDWeave.Godot;
 
 public class VariantParser {
     public const byte EncodeMask = 0xFF;

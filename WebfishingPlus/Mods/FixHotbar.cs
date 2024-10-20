@@ -1,12 +1,13 @@
-﻿using GDWeave.Parser;
-using GDWeave.Parser.Variants;
+﻿using GDWeave.Godot;
+using GDWeave.Godot.Variants;
+using GDWeave.Modding;
 
-namespace GDWeave.Mods;
+namespace WebfishingPlus.Mods;
 
-public class FixHotbar : ScriptMod {
-    public override bool ShouldRun(string path) => path == "res://Scenes/Singletons/playerdata.gdc";
+public class FixHotbar : IScriptMod {
+    public bool ShouldRun(string path) => path == "res://Scenes/Singletons/playerdata.gdc";
 
-    public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+    public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
         var eraseMatch = new MultiTokenWaiter([
             t => t is IdentifierToken {Name: "inventory"},
             t => t.Type is TokenType.Period,
@@ -32,7 +33,6 @@ public class FixHotbar : ScriptMod {
                 yield return new IdentifierToken(replaceVar);
             } else if (eraseMatch.Check(token)) {
                 yield return token;
-
 
                 // var replaceVar = 0
                 yield return new Token(TokenType.PrVar);

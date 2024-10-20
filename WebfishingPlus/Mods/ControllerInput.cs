@@ -1,7 +1,8 @@
-﻿using GDWeave.Parser;
-using GDWeave.Parser.Variants;
+﻿using GDWeave.Godot;
+using GDWeave.Godot.Variants;
+using GDWeave.Modding;
 
-namespace GDWeave.Mods;
+namespace WebfishingPlus.Mods;
 
 public class ControllerInput {
     private enum JoyAxis {
@@ -67,10 +68,10 @@ public class ControllerInput {
     private const string Freecam = "freecam";
     private const string EscMenu = "esc_menu";
 
-    public class InputRegister : ScriptMod {
-        public override bool ShouldRun(string path) => path == "res://Scenes/Singletons/globals.gdc";
+    public class InputRegister : IScriptMod {
+        public bool ShouldRun(string path) => path == "res://Scenes/Singletons/globals.gdc";
 
-        public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+        public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var readyWaiter = new TokenWaiter(
                 t => t.Type is TokenType.Newline && t.AssociatedData is 1,
                 waitForReady: true
@@ -224,15 +225,15 @@ public class ControllerInput {
         }
     }
 
-    public class PlayerModifier : ScriptMod {
-        public override bool ShouldRun(string path) => path == "res://Scenes/Entities/Player/player.gdc";
+    public class PlayerModifier : IScriptMod {
+        public bool ShouldRun(string path) => path == "res://Scenes/Entities/Player/player.gdc";
 
         private const string UsingController = "gdweave_using_controller";
         private const string WishSprint = "gdweave_wish_sprint";
         private const string WishWalk = "gdweave_wish_walk";
         private const string CurrentHotbar = "gdweave_current_hotbar";
 
-        public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+        public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var customHeldItemWaiter = new TokenWaiter(
                 t => t.Type is TokenType.Newline,
                 waitForReady: true
@@ -290,7 +291,9 @@ public class ControllerInput {
                     foreach (var t in this.PatchCheckController()) yield return t;
                 } else if (processMovementWaiter.Check(token)) {
                     yield return token;
-                    if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchLandVibration()) yield return t;
+                    if (Mod.Config.ControllerVibration)
+                        foreach (var t in this.PatchLandVibration())
+                            yield return t;
                 } else if (rodCastDistWaiter.Check(token)) {
                     yield return token;
                     foreach (var t in this.PatchSprintReel()) yield return t;
@@ -748,10 +751,10 @@ public class ControllerInput {
         }
     }
 
-    public class Fishing3Modifier : ScriptMod {
-        public override bool ShouldRun(string path) => path == "res://Scenes/Minigames/Fishing3/fishing3.gdc";
+    public class Fishing3Modifier : IScriptMod {
+        public bool ShouldRun(string path) => path == "res://Scenes/Minigames/Fishing3/fishing3.gdc";
 
-        public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+        public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var reelSoundWaiter = new MultiTokenWaiter([
                 t => t.Type is TokenType.PrVar,
                 t => t is IdentifierToken {Name: "reel_sound"},
@@ -772,7 +775,9 @@ public class ControllerInput {
                     //if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchReelVibration()) yield return t;
                 } else if (yankWaiter.Check(token)) {
                     yield return token;
-                    if (GDWeave.Config.ControllerVibration) foreach (var t in this.PatchYankVibration()) yield return t;
+                    if (Mod.Config.ControllerVibration)
+                        foreach (var t in this.PatchYankVibration())
+                            yield return t;
                 } else {
                     yield return token;
                 }
@@ -846,7 +851,7 @@ public class ControllerInput {
         yield return new Token(TokenType.ParenthesisClose);
     }
 
-    private static double CalcVibration(double toCalc) => toCalc * GDWeave.Config.ControllerVibrationStrength;
+    private static double CalcVibration(double toCalc) => toCalc * Mod.Config.ControllerVibrationStrength;
 
     private static IEnumerable<Token> VibrateController(double weak, double strong, double duration) {
         // Input.start_joy_vibration(-1, weak, strong, duration)

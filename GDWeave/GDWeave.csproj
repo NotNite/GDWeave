@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <TargetFramework>net8.0-windows8.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <Version>1.2.0</Version>
+        <Version>2.0.0.0</Version>
 
         <!-- required for loader -->
         <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
@@ -14,13 +14,17 @@
     <ItemGroup>
         <PackageReference Include="Reloaded.Hooks" Version="4.3.0"/>
         <PackageReference Include="Reloaded.Memory.Sigscan" Version="3.1.6"/>
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0"/>
+        <PackageReference Include="Serilog.Sinks.File" Version="6.0.0"/>
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\GDWeave.Parser\GDWeave.Parser.csproj"/>
-    </ItemGroup>
-
-    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="xcopy /Y /I &quot;$(TargetDir)&quot; &quot;$(WebfishingPath)/GDWeave&quot;" Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'"/>
+    <Target
+        Name="PostBuild"
+        AfterTargets="PostBuildEvent"
+        Condition="'$(GDWeavePath)' != ''">
+        <Exec
+            Command="xcopy /Y /I &quot;$(TargetDir)&quot; &quot;$(GDWeavePath)/core&quot;"
+            Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'"
+        />
     </Target>
 </Project>

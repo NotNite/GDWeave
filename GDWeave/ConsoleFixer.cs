@@ -2,7 +2,7 @@
 
 namespace GDWeave;
 
-public class ConsoleFixer {
+internal class ConsoleFixer {
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool AllocConsole();
@@ -12,7 +12,7 @@ public class ConsoleFixer {
     private static extern bool AttachConsole(int pid);
 
     public static void Init() {
-        if (Environment.GetEnvironmentVariable("GDWEAVE_DEBUG") is not null) {
+        if (Environment.GetEnvironmentVariable("GDWEAVE_CONSOLE") is not null) {
             AllocConsole();
             AttachConsole(-1);
         }

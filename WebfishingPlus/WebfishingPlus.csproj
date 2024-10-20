@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\GDWeave\GDWeave.csproj" Private="false"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="manifest.json" CopyToOutputDirectory="PreserveNewest"/>
+    </ItemGroup>
+
+    <Target
+        Name="PostBuild"
+        AfterTargets="PostBuildEvent"
+        Condition="'$(GDWeavePath)' != ''">
+        <Exec
+            Command="xcopy /Y /I &quot;$(TargetDir)&quot; &quot;$(GDWeavePath)/mods/$(AssemblyName)&quot;"
+            Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))'"
+        />
+    </Target>
+</Project>

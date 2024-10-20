@@ -1,4 +1,6 @@
-﻿namespace GDWeave.Parser;
+﻿// TODO: engine-dependent
+
+namespace GDWeave.Godot;
 
 public class TokenParser {
     public const int TokenByteMask = 0x80;

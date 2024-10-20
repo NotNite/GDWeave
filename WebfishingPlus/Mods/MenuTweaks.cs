@@ -1,13 +1,14 @@
-﻿using GDWeave.Parser;
-using GDWeave.Parser.Variants;
+﻿using GDWeave.Godot;
+using GDWeave.Godot.Variants;
+using GDWeave.Modding;
 
-namespace GDWeave.Mods;
+namespace WebfishingPlus.Mods;
 
 public class MenuTweaks {
-    public class MainMenuModifier : ScriptMod {
-        public override bool ShouldRun(string path) => path == "res://Scenes/Menus/Main Menu/main_menu.gdc";
+    public class MainMenuModifier : IScriptMod {
+        public bool ShouldRun(string path) => path == "res://Scenes/Menus/Main Menu/main_menu.gdc";
 
-        public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+        public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var versionStringWaiter = new MultiTokenWaiter([
                 t => t is ConstantToken {Value: StringVariant {Value: "lamedeveloper v"}},
                 t => t is IdentifierToken {Name: "GAME_VERSION"},
@@ -32,9 +33,8 @@ public class MenuTweaks {
                 }
 
                 if (versionStringWaiter.Check(token)) {
-                    // ... + "+ GDWeave " + GDWeave.VERSION
                     yield return new Token(TokenType.OpAdd);
-                    yield return new ConstantToken(new StringVariant($" + GDWeave {GDWeave.Version}"));
+                    yield return new ConstantToken(new StringVariant($" + WebfishingPlus {Mod.Version}"));
                     yield return token;
                 } else if (disabledWaiter.Check(token)) {
                     yield return token;
@@ -51,10 +51,10 @@ public class MenuTweaks {
         }
     }
 
-    public class EscMenuModifier : ScriptMod {
-        public override bool ShouldRun(string path) => path == "res://Scenes/HUD/Esc Menu/esc_menu.gdc";
+    public class EscMenuModifier : IScriptMod {
+        public bool ShouldRun(string path) => path == "res://Scenes/HUD/Esc Menu/esc_menu.gdc";
 
-        public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+        public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
             var versionStringWaiter = new MultiTokenWaiter([
                 t => t is IdentifierToken {Name: "GAME_VERSION"},
                 t => t.Type is TokenType.ParenthesisClose,
@@ -63,9 +63,8 @@ public class MenuTweaks {
             foreach (var token in tokens) {
                 if (versionStringWaiter.Check(token)) {
                     yield return token;
-                    // ... + "+ GDWeave " + GDWeave.VERSION
                     yield return new Token(TokenType.OpAdd);
-                    yield return new ConstantToken(new StringVariant($" + GDWeave {GDWeave.Version}"));
+                    yield return new ConstantToken(new StringVariant($" + WebfishingPlus {Mod.Version}"));
                 } else {
                     yield return token;
                 }

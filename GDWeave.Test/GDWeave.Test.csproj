@@ -5,8 +5,8 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
     </PropertyGroup>
-
+   
     <ItemGroup>
-        <ProjectReference Include="..\GDWeave.Parser\GDWeave.Parser.csproj"/>
+        <ProjectReference Include="..\GDWeave\GDWeave.csproj"/>
     </ItemGroup>
 </Project>

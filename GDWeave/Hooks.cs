@@ -1,73 +1,55 @@
-﻿using System.Runtime.InteropServices;
+﻿// TODO: engine-dependent
+
+using System.Runtime.InteropServices;
 using System.Text;
-using GDWeave.Mods;
-using GDWeave.Parser;
+using GDWeave.Godot;
+using GDWeave.Modding;
+using Serilog;
 
 namespace GDWeave;
 
-public unsafe class Hooks {
+internal unsafe class Hooks {
     // GDScript::load_byte_code
-    public delegate nint LoadByteCodeDelegate(nint gdscript, GodotString* path);
+    private delegate nint LoadByteCodeDelegate(nint gdscript, GodotString* path);
 
     // GDScriptTokenizerBuffer::set_code_buffer
-    public delegate nint SetCodeBufferDelegate(nint tokenizerBuffer, GodotVector* codeBuffer);
+    private delegate nint SetCodeBufferDelegate(nint tokenizerBuffer, GodotVector* codeBuffer);
 
-    public ITrackedHook<LoadByteCodeDelegate> LoadByteCodeHook;
-    public ITrackedHook<SetCodeBufferDelegate> SetCodeBufferHook;
+    private ITrackedHook<LoadByteCodeDelegate> loadByteCodeHook;
+    private ITrackedHook<SetCodeBufferDelegate> setCodeBufferHook;
 
-    public static ThreadLocal<string> CurrentPath = new(() => string.Empty);
-    public static object StdoutLock = new();
+    private readonly ILogger logger = GDWeave.Logger.ForContext<Hooks>();
+    private readonly ThreadLocal<string> currentPath = new(() => string.Empty);
+    private readonly ScriptModder modder;
 
-    public static ScriptModder Modder = null!;
+    private bool dumpGdsc = Environment.GetEnvironmentVariable("GDWEAVE_DUMP_GDSC") is not null;
 
-    public Hooks(Interop interop) {
-        List<ScriptMod> mods = [];
-
-        if (GDWeave.Config.MenuTweaks) {
-            mods.Add(new MenuTweaks.MainMenuModifier());
-            mods.Add(new MenuTweaks.EscMenuModifier());
-        }
-
-        if (GDWeave.Config.ControllerSupport) {
-            mods.Add(new ControllerInput.InputRegister());
-            mods.Add(new ControllerInput.PlayerModifier());
-            mods.Add(new ControllerInput.Fishing3Modifier());
-        }
-
-        if (GDWeave.Config.SortInventory) {
-            mods.Add(new InventorySorter());
-        }
-
-        if (GDWeave.Config.FixHotbar) {
-            mods.Add(new FixHotbar());
-        }
-
-        Modder = new ScriptModder(mods);
+    public Hooks(ScriptModder modder, Interop interop) {
+        this.modder = modder;
 
         var loadByteCodeAddr = interop.ScanText([
             "E8 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 48 89 7D ?? 48 8D 35",
             "48 89 54 24 ?? 48 89 4C 24 ?? 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC 78 02 00 00",
         ]);
-        this.LoadByteCodeHook = interop.CreateHook<LoadByteCodeDelegate>(loadByteCodeAddr, this.LoadByteCodeDetour);
-        this.LoadByteCodeHook.Enable();
+        this.loadByteCodeHook = interop.CreateHook<LoadByteCodeDelegate>(loadByteCodeAddr, this.LoadByteCodeDetour);
+        this.loadByteCodeHook.Enable();
 
         var setCodeBufferAddr = interop.ScanText([
             "E8 ?? ?? ?? ?? 48 89 5D ?? 48 8D 54 24 ?? 48 8D 4D ?? E8 ?? ?? ?? ?? 44 8B E0",
             "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ?? 48 81 EC D0 00 00 00 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 4C 8B F9"
         ]);
-        this.SetCodeBufferHook = interop.CreateHook<SetCodeBufferDelegate>(setCodeBufferAddr, this.SetCodeBufferDetour);
-        this.SetCodeBufferHook.Enable();
+        this.setCodeBufferHook = interop.CreateHook<SetCodeBufferDelegate>(setCodeBufferAddr, this.SetCodeBufferDetour);
+        this.setCodeBufferHook.Enable();
     }
 
     private nint LoadByteCodeDetour(nint gdscript, GodotString* path) {
-        CurrentPath.Value = path->Value;
-        //lock (StdoutLock) Console.WriteLine($"Hooked load_byte_code: {CurrentPath.Value}");
-        return this.LoadByteCodeHook.Original(gdscript, path);
+        this.currentPath.Value = path->Value;
+        return this.loadByteCodeHook.Original(gdscript, path);
     }
 
     private nint SetCodeBufferDetour(nint tokenizerBuffer, GodotVector* codeBuffer) {
         var data = codeBuffer->Data;
-        var path = CurrentPath.Value ?? string.Empty;
+        var path = this.currentPath.Value ?? string.Empty;
         var ran = false;
 
         try {
@@ -75,25 +57,27 @@ public unsafe class Hooks {
             using var br = new BinaryReader(ms);
             var gdsc = new GodotScriptFile(br);
 
-            try {
-                var gameDir = Path.GetDirectoryName(Environment.ProcessPath)!;
-                var outFile = Path.Combine(gameDir, "gdc", path.Replace("res://", ""));
-                var outDir = Path.GetDirectoryName(outFile)!;
+            if (this.dumpGdsc) {
+                try {
+                    var gameDir = Path.GetDirectoryName(Environment.ProcessPath)!;
+                    var outFile = Path.Combine(gameDir, "gdc", path.Replace("res://", ""));
+                    var outDir = Path.GetDirectoryName(outFile)!;
 
-                if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
-                if (File.Exists(outFile)) File.Delete(outFile);
+                    if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
+                    if (File.Exists(outFile)) File.Delete(outFile);
 
-                using var outFileHandle = File.OpenWrite(outFile);
-                using var cleanBw = new BinaryWriter(outFileHandle);
-                gdsc.Write(cleanBw);
-            } catch (Exception e) {
-                lock (StdoutLock) Console.WriteLine(e);
+                    using var outFileHandle = File.OpenWrite(outFile);
+                    using var cleanBw = new BinaryWriter(outFileHandle);
+                    gdsc.Write(cleanBw);
+                } catch (Exception e) {
+                    this.logger.Warning(e, "Failed to write clean GDSC file");
+                }
             }
 
             try {
-                ran = Modder.Run(gdsc, path);
+                ran = this.modder.Run(gdsc, path);
             } catch (Exception e) {
-                lock (StdoutLock) Console.WriteLine(e);
+                this.logger.Error(e, "Failed to run mod on {Path}", path);
             }
 
             using var output = new MemoryStream();
@@ -101,30 +85,19 @@ public unsafe class Hooks {
             gdsc.Write(bw);
 
             var replacement = output.ToArray();
-            /*lock (StdoutLock) {
-                Console.WriteLine(
-                    $"Hooked set_code_buffer ({path}): "
-                    + $"{gdsc.Identifiers.Count} identifiers, "
-                    + $"{gdsc.Constants.Count} constants, "
-                    + $"{gdsc.Lines.Count} lines, "
-                    + $"{gdsc.Tokens.Count} tokens, "
-                    + $"{data.Length} orig bytes, "
-                    + $"{replacement.Length} new bytes"
-                );
-            }*/
             data = replacement;
         } catch (Exception e) {
             if (e is not InvalidDataException) {
-                lock (StdoutLock) Console.WriteLine(e);
+                this.logger.Error(e, "Failed to parse GDSC file {Path}", path);
             }
         }
 
         if (!ran) {
-            return this.SetCodeBufferHook.Original(tokenizerBuffer, codeBuffer);
+            return this.setCodeBufferHook.Original(tokenizerBuffer, codeBuffer);
         }
 
         using var vec = new GodotVectorWrapper(data);
-        return this.SetCodeBufferHook.Original(tokenizerBuffer, vec.Vector);
+        return this.setCodeBufferHook.Original(tokenizerBuffer, vec.Vector);
     }
 
     public static nint CowDataCtor(ReadOnlySpan<byte> buffer) {
@@ -166,7 +139,7 @@ public unsafe class Hooks {
         public string Value {
             get {
                 var str = Marshal.PtrToStringUni(this.CowData.Value, this.CowData.Size);
-                Utils.TrimNullTerminator(ref str);
+                MemoryUtils.TrimNullTerminator(ref str);
                 return str;
             }
         }
@@ -216,8 +189,4 @@ public unsafe class Hooks {
             GodotVector.Dtor(this.Vector);
         }
     }
-
-    // messageboxa if it's needed
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    public static extern int MessageBox(IntPtr hWnd, string text, string caption, uint type);
 }

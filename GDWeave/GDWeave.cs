@@ -1,61 +1,61 @@
-﻿// ReSharper disable InconsistentNaming
-
-using System.Reflection;
-using System.Text.Json;
+﻿using System.Reflection;
+using GDWeave.Modding;
+using Serilog;
 
 namespace GDWeave;
 
-public class GDWeave {
-    private static readonly Version VersionObject = Assembly.GetExecutingAssembly().GetName().Version!;
-    public static readonly string Version = $"v{VersionObject.Major}.{VersionObject.Minor}.{VersionObject.Build}";
+// ReSharper disable InconsistentNaming
+internal class GDWeave {
+    public static readonly Assembly Assembly = Assembly.GetExecutingAssembly();
+    public static readonly string Version = Assembly.GetName().Version!.ToString();
+    public static string GameDir = null!;
+    public static string GDWeaveDir => Path.Combine(GameDir, "GDWeave");
 
-    public delegate void MainDelegate();
-
-    public static Config Config = null!;
+    public static ILogger Logger = null!;
+    public static ModLoader ModLoader = null!;
     public static Interop Interop = null!;
     public static Hooks Hooks = null!;
 
+    public delegate void MainDelegate();
+
     public static void Main() {
         try {
-            ConsoleFixer.Init();
-
-            Console.WriteLine($"GDWeave {Version}");
-
-            Config = GetConfig();
-            Interop = new Interop();
-            Hooks = new Hooks(Interop);
+            Init();
         } catch (Exception e) {
-            Console.WriteLine($"GDWeave failed to start: {e.Message}");
+            // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+            if (Logger is not null) {
+                Logger.Error(e, "GDWeave failed to initialize");
+            } else {
+                Console.WriteLine($"GDWeave failed to initialize: {e.Message}");
+            }
         }
     }
 
-    public static Config GetConfig() {
-        var configPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath!)!, "gdweave.json");
-        return !File.Exists(configPath) ? CreateConfigFile(configPath) : ReadConfigFile(configPath);
-    }
+    private static void Init() {
+        ConsoleFixer.Init();
 
-    private static Config CreateConfigFile(string configPath) {
-        var defaultConfig = new Config();
+        GameDir = Path.GetDirectoryName(Environment.ProcessPath!)!;
 
-        try {
-            var configFile = File.CreateText(configPath);
-            configFile.Write(JsonSerializer.Serialize(defaultConfig, new JsonSerializerOptions {WriteIndented = true}));
-            configFile.Close();
-        } catch (Exception e) {
-            Console.WriteLine($"GDWeave: Failed to create config file: {e.Message}");
-        }
+        var logPath = Path.Combine(GDWeaveDir, "GDWeave.log");
+        if (File.Exists(logPath)) File.Delete(logPath);
 
-        return defaultConfig;
-    }
+        var config = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .WriteTo.File(logPath)
+            .WriteTo.Console();
+        Logger = config.CreateLogger();
+        Log.Logger = Logger;
 
-    private static Config ReadConfigFile(string configPath) {
-        try {
-            var json = File.ReadAllText(configPath);
-            var config = JsonSerializer.Deserialize<Config>(json)!;
-            return config;
-        } catch (Exception e) {
-            Console.WriteLine($"GDWeave: Failed to deserialize config file: {e.Message}");
-            return new Config();
-        }
+        ModLoader = new ModLoader();
+        Interop = new Interop();
+
+        List<IScriptMod> scriptMods = [
+            ..ModLoader.ScriptMods,
+        ];
+        var hasPckFiles = ModLoader.LoadedMods.Where(m => m.PackPath is not null).ToList();
+        if (hasPckFiles.Count > 0) scriptMods.Add(new PackFileLoader(hasPckFiles));
+
+        var scriptModder = new ScriptModder(scriptMods);
+        Hooks = new Hooks(scriptModder, Interop);
     }
 }

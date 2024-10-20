@@ -1,12 +1,13 @@
-﻿using GDWeave.Parser;
-using GDWeave.Parser.Variants;
+﻿using GDWeave.Godot;
+using GDWeave.Godot.Variants;
+using GDWeave.Modding;
 
-namespace GDWeave.Mods;
+namespace WebfishingPlus.Mods;
 
-public class InventorySorter : ScriptMod {
-    public override bool ShouldRun(string path) => path == "res://Scenes/Singletons/playerdata.gdc";
+public class InventorySorter : IScriptMod {
+    public bool ShouldRun(string path) => path == "res://Scenes/Singletons/playerdata.gdc";
 
-    public override IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+    public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
         var extendsWaiter = new MultiTokenWaiter([
             t => t.Type is TokenType.PrExtends,
             t => t.Type is TokenType.Newline

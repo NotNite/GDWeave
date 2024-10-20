@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace GDWeave.Parser.Variants;
+namespace GDWeave.Godot.Variants;
 
 public class StringVariant : Variant {
     public string Value;

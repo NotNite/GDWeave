@@ -1,10 +1,12 @@
+// TODO: prompt user to download .NET if missing
 use netcorehost::{nethost, pdcstr, pdcstring::PdCString};
 use proxy_dll::proxy;
 
 fn init() -> anyhow::Result<()> {
     let dir = std::env::current_exe()?.parent().unwrap().join("GDWeave");
-    let runtime_config_path = dir.join("GDWeave.runtimeconfig.json");
-    let dll_path = dir.join("GDWeave.dll");
+    let core = dir.join("core");
+    let runtime_config_path = core.join("GDWeave.runtimeconfig.json");
+    let dll_path = core.join("GDWeave.dll");
 
     let hostfxr = nethost::load_hostfxr()?;
     let runtime_config_pdcstr = PdCString::from_os_str(runtime_config_path.as_os_str())?;

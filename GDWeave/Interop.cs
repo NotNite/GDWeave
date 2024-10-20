@@ -111,9 +111,8 @@ public abstract class TrackedHook(nint addr, byte[] originalBytes) : ITrackedHoo
     public abstract bool Enabled { get; }
 
     public virtual void Dispose() {
-        MemoryUtils.VirtualProtect(this.Address, this.OriginalBytes.Length, 0x40, out var oldProtect);
-        MemoryUtils.WriteRaw(this.Address, this.OriginalBytes);
-        MemoryUtils.VirtualProtect(this.Address, this.OriginalBytes.Length, oldProtect, out _);
+        MemoryUtils.Unprotect(this.Address, this.OriginalBytes.Length,
+            () => MemoryUtils.WriteRaw(this.Address, this.OriginalBytes));
     }
 
     public abstract void Enable();

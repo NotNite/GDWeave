@@ -1,6 +1,8 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿// TODO: engine-dependent
 
-namespace GDWeave.Parser;
+using System.Diagnostics.CodeAnalysis;
+
+namespace GDWeave.Godot;
 
 public class Token {
     public TokenType Type;
@@ -152,4 +154,4 @@ public enum TokenType {
     Error,
     Eof,
     Cursor
-};
+}

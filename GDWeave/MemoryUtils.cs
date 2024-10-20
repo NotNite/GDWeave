@@ -13,12 +13,6 @@ public static class MemoryUtils {
         VirtualProtect(memoryAddress, size, oldProtect, out _);
     }
 
-    public static unsafe byte[] ReadRawNullTerminated(nint memoryAddress) {
-        var byteCount = 0;
-        while (*(byte*) (memoryAddress + byteCount) != 0x00) byteCount++;
-        return ReadRaw(memoryAddress, byteCount);
-    }
-
     public static byte[] ReadRaw(nint memoryAddress, int length) {
         var value = new byte[length];
         Marshal.Copy(memoryAddress, value, 0, value.Length);
@@ -29,20 +23,8 @@ public static class MemoryUtils {
         Marshal.Copy(value, 0, memoryAddress, value.Length);
     }
 
-    public static void WriteStringNullTerminated(nint memoryAddress, string value) {
-        var bytes = Encoding.UTF8.GetBytes(value);
-        WriteRawNullTerminated(memoryAddress, bytes);
-    }
-
-    public static void WriteRawNullTerminated(nint memoryAddress, byte[] value) {
-        var length = value.Length;
-        Marshal.Copy(value, 0, memoryAddress, length);
-        Marshal.WriteByte(memoryAddress + length, 0x00);
-    }
-
-    public static nint Alloc(int size) {
-        var ptr = Marshal.AllocHGlobal(size);
-        Marshal.Copy(new byte[size], 0, ptr, size);
-        return ptr;
+    public static void TrimNullTerminator(ref string str) {
+        var @null = str.IndexOf('\u0000');
+        if (@null != -1) str = str[..@null];
     }
 }
