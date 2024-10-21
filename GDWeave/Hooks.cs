@@ -2,6 +2,8 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using GDWeave.Godot;
 using GDWeave.Modding;
 using Serilog;
@@ -27,17 +29,40 @@ internal unsafe class Hooks {
     public Hooks(ScriptModder modder, Interop interop) {
         this.modder = modder;
 
-        var loadByteCodeAddr = interop.ScanText([
-            "E8 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 48 89 7D ?? 48 8D 35",
-            "48 89 54 24 ?? 48 89 4C 24 ?? 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC 78 02 00 00",
-        ]);
+        // get patterns if they exist
+
+        JsonSerializerOptions JsonSerializerOptions = new() {
+            WriteIndented = true,
+            Converters = {new JsonStringEnumConverter()}
+        };
+
+        PatternOverride pOvr;
+
+        if (File.Exists("patterns.json")) {
+            pOvr = JsonSerializer.Deserialize<PatternOverride>(File.ReadAllText("patterns.json"), JsonSerializerOptions)!;
+        } else {
+            pOvr = new PatternOverride {
+                PatternOverrides = new Dictionary<PatternType, string[]> {
+                    [PatternType.LoadByteCode] = new []
+                    {
+                        "E8 ?? ?? ?? ?? 85 C0 0F 84 ?? ?? ?? ?? 48 89 7D ?? 48 8D 35",
+                        "48 89 54 24 ?? 48 89 4C 24 ?? 55 53 56 57 41 54 41 55 41 56 41 57 48 8D AC 24 ?? ?? ?? ?? 48 81 EC 78 02 00 00"
+
+                    },
+                    [PatternType.SetCode] = new []
+                    {
+                        "E8 ?? ?? ?? ?? 48 89 5D ?? 48 8D 54 24 ?? 48 8D 4D ?? E8 ?? ?? ?? ?? 44 8B E0",
+                        "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ?? 48 81 EC D0 00 00 00 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 4C 8B F9"
+                    }
+                }
+            };
+        }
+
+        var loadByteCodeAddr = interop.ScanText(pOvr!.PatternOverrides[PatternType.LoadByteCode]);
         this.loadByteCodeHook = interop.CreateHook<LoadByteCodeDelegate>(loadByteCodeAddr, this.LoadByteCodeDetour);
         this.loadByteCodeHook.Enable();
 
-        var setCodeBufferAddr = interop.ScanText([
-            "E8 ?? ?? ?? ?? 48 89 5D ?? 48 8D 54 24 ?? 48 8D 4D ?? E8 ?? ?? ?? ?? 44 8B E0",
-            "48 89 5C 24 ?? 55 56 57 41 54 41 55 41 56 41 57 48 8D 6C 24 ?? 48 81 EC D0 00 00 00 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 4C 8B F9"
-        ]);
+        var setCodeBufferAddr = interop.ScanText(pOvr.PatternOverrides[PatternType.SetCode]);
         this.setCodeBufferHook = interop.CreateHook<SetCodeBufferDelegate>(setCodeBufferAddr, this.SetCodeBufferDetour);
         this.setCodeBufferHook.Enable();
     }
