@@ -1,5 +1,5 @@
 use isahc::ReadResponseExt;
-use netcorehost::{nethost, pdcstr, pdcstring::PdCString};
+use netcorehost::{error::HostingError, nethost, pdcstr, pdcstring::PdCString};
 use proxy_dll::proxy;
 use thiserror::Error;
 use win_msgbox::{Okay, YesNo};
@@ -59,7 +59,7 @@ fn install_net() -> anyhow::Result<()> {
     let path = std::env::current_exe()?
         .parent()
         .ok_or(LoaderError::Unknown)?
-        .join("dotnet-sdkexe");
+        .join("dotnet-sdk.exe");
 
     let mut resp = isahc::get(DOTNET_URL)?;
     let bytes = resp.bytes()?;
@@ -75,32 +75,35 @@ fn install_net() -> anyhow::Result<()> {
 #[proxy]
 pub fn main() {
     if let Err(e) = init() {
-        if let LoaderError::LoadHostfxrError(_) = e {
-            let should_install_net = win_msgbox::information::<YesNo>(
-                "GDWeave couldn't load the .NET Runtime. Would you like to install it?\nDownloading the installer will take a moment. You'll need to restart the game after installation.",
-            )
-            .title("GDWeave")
-            .show()
-            .unwrap_or(YesNo::No);
+        match e {
+            LoaderError::LoadHostfxrError(_)
+            | LoaderError::HostingError(HostingError::FrameworkMissingFailure) => {
+                let should_install_net = win_msgbox::information::<YesNo>("GDWeave couldn't load the .NET Runtime. Would you like to install it?\nDownloading the installer will take a moment. You'll need to restart the game after installation.")
+                    .title("GDWeave")
+                    .show()
+                    .unwrap_or(YesNo::No);
 
-            if should_install_net == YesNo::Yes {
-                std::thread::spawn(|| {
-                    if let Err(e) = install_net() {
-                        win_msgbox::warning::<Okay>(&format!(
-                            "Failed to install .NET Runtime:\n{:?}",
-                            e
-                        ))
-                        .title("GDWeave")
-                        .show()
-                        .ok();
-                    }
-                });
+                if should_install_net == YesNo::Yes {
+                    std::thread::spawn(|| {
+                        if let Err(e) = install_net() {
+                            win_msgbox::warning::<Okay>(&format!(
+                                "Failed to install .NET:\n{:?}",
+                                e
+                            ))
+                            .title("GDWeave")
+                            .show()
+                            .ok();
+                        }
+                    });
+                };
             }
-        } else {
-            win_msgbox::warning::<Okay>(&format!("GDWeave failed to start:\n{:?}", e))
-                .title("GDWeave")
-                .show()
-                .ok();
+
+            _ => {
+                win_msgbox::warning::<Okay>(&format!("GDWeave failed to start:\n{:?}", e))
+                    .title("GDWeave")
+                    .show()
+                    .ok();
+            }
         }
     }
 }
