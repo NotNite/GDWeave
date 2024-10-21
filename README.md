@@ -4,13 +4,16 @@ GDWeave is an experimental runtime patching system for compiled GDScript bytecod
 
 ## Installation
 
-- Download [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0).
-  - If you're playing on Linux, this needs to be installed in the Wine/Proton prefix. The loader should prompt you to do it automatically.
-- Download [the latest release](https://github.com/NotNite/GDWeave/releases) and extract it to your game install.
-- Start the game.
-  - If you're playing on Linux, add `WINEDLLOVERRIDES="winmm=n,b" %command%` to the Steam launch options.
+Download [the latest release](https://github.com/NotNite/GDWeave/releases/latest/download/GDWeave.zip) and extract it to your game install. You should end up with a `GDWeave` folder and `winmm.dll` next to the game files.
 
-See [here](MODS.md) for installing/creating mods.
+After GDWeave is installed, you can [install/create some mods](MODS.md)!
+
+## Troubleshooting/tips
+
+- Do not download GDWeave from the "Code" button at the top.
+- You can open the folder the game is installed into with Steam - right click > "Manage" > "Browse local files".
+- You may need to install [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) manually, if the installer from GDWeave doesn't work. Pick the SDK for Windows x64.
+- Linux users will need to set `WINEDLLOVERRIDES="winmm=n,b" %command%` in their Steam launch arguments.
 
 ## Why?
 
