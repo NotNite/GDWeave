@@ -6,11 +6,6 @@ using Serilog;
 namespace GDWeave;
 
 internal class ModInterface(string modId, ModLoader modLoader) : IModInterface {
-    private static JsonSerializerOptions JsonSerializerOptions = new() {
-        WriteIndented = true,
-        Converters = {new JsonStringEnumConverter()}
-    };
-
     public ILogger Logger { get; } = GDWeave.Logger.ForContext("SourceContext", modId);
 
     private string GetConfigPath() => Path.Combine(GDWeave.GDWeaveDir, "configs", $"{modId}.json");
@@ -25,7 +20,7 @@ internal class ModInterface(string modId, ModLoader modLoader) : IModInterface {
         }
 
         var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<T>(json, JsonSerializerOptions)!;
+        return JsonSerializer.Deserialize<T>(json, GDWeave.JsonSerializerOptions)!;
     }
 
     public void WriteConfig<T>(T config) where T : class {
@@ -33,7 +28,7 @@ internal class ModInterface(string modId, ModLoader modLoader) : IModInterface {
         var dir = Path.GetDirectoryName(path)!;
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-        var json = JsonSerializer.Serialize(config, JsonSerializerOptions);
+        var json = JsonSerializer.Serialize(config, GDWeave.JsonSerializerOptions);
         File.WriteAllText(path, json);
     }
 

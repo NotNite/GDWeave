@@ -1,4 +1,6 @@
 ﻿using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using GDWeave.Modding;
 using Serilog;
 
@@ -15,6 +17,11 @@ internal class GDWeave {
     public static ModLoader ModLoader = null!;
     public static Interop Interop = null!;
     public static Hooks Hooks = null!;
+
+    public static JsonSerializerOptions JsonSerializerOptions = new() {
+        WriteIndented = true,
+        Converters = {new JsonStringEnumConverter()}
+    };
 
     public delegate void MainDelegate();
 
