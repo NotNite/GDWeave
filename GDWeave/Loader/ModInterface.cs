@@ -20,7 +20,9 @@ internal class ModInterface(string modId, ModLoader modLoader) : IModInterface {
         }
 
         var json = File.ReadAllText(path);
-        return JsonSerializer.Deserialize<T>(json, GDWeave.JsonSerializerOptions)!;
+        var obj = JsonSerializer.Deserialize<T>(json, GDWeave.JsonSerializerOptions)!;
+        this.WriteConfig(obj); // apply new fields
+        return obj;
     }
 
     public void WriteConfig<T>(T config) where T : class {
