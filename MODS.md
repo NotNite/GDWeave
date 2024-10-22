@@ -31,3 +31,26 @@ For assets, GDWeave will load the specified pack file and execute `res://mods/<m
 For script manipulation, GDWeave will load the specified assembly and create the first class that inherits `IMod`. The constructor can take an optional `IModInterface`. You can see a sample C# mod [here](https://github.com/NotNite/GDWeave.Sample).
 
 C# modding is only required if you wish to patch existing scripts. Custom scripts and assets can be done purely in pack files. If working from a decompiled game project, specify include/exclude filters when exporting a .pck to only export the changed files and the `mods` directory.
+
+## Useful tools
+
+### Environment variables
+
+You can set multiple environment variables for debugging information:
+
+- `GDWEAVE_DEBUG` logs more debug information to the log file.
+- `GDWEAVE_CONSOLE` opens a console window.
+  - You can also start the game from the command line, but this console includes GDWeave output.
+- `GDWEAVE_DUMP_GDSC` will output game scripts to a `gdc` folder in the game install. You can [disassemble these scripts](#disassembling-scripts).
+
+Set these environment variables to any value (e.g. `GDWEAVE_DEBUG=1`) to enable them.
+
+### Disassembling scripts
+
+You can use `GDWeave.Test` to disassemble a script:
+
+```shell
+dotnet run --project ./GDWeave.Test -- parse /path/to/script.gdc
+```
+
+This will show you the list of tokens used in that script, as well as some other information.
