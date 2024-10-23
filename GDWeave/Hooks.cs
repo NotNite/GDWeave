@@ -1,6 +1,7 @@
 ﻿// TODO: engine-dependent
 
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using GDWeave.Godot;
@@ -10,17 +11,24 @@ using Serilog;
 namespace GDWeave;
 
 internal unsafe class Hooks {
+    private delegate nint SetUnhandledExceptionFilterDelegate(nint filter);
+    private delegate nint UnhandledExceptionFilterDelegate(ExceptionPointersStruct* exceptionInfo);
+
+    private delegate nint CreateFileDelegate(
+        nint fileName, uint desiredAccess, uint shareMode, nint securityAttributes,
+        uint creationDisposition, uint flagsAndAttributes, nint templateFile
+    );
+
     // GDScript::load_byte_code
     private delegate nint LoadByteCodeDelegate(nint gdscript, GodotString* path);
 
     // GDScriptTokenizerBuffer::set_code_buffer
     private delegate nint SetCodeBufferDelegate(nint tokenizerBuffer, GodotVector* codeBuffer);
 
-    private delegate nint SetUnhandledExceptionFilterDelegate(nint filter);
-    private delegate nint UnhandledExceptionFilterDelegate(ExceptionPointersStruct* exceptionInfo);
-
     private ITrackedHook<SetUnhandledExceptionFilterDelegate> setUnhandledExceptionFilterHook;
     private UnhandledExceptionFilterDelegate unhandledExceptionFilter;
+    private ITrackedHook<CreateFileDelegate> createFileHook;
+    private bool sentStdout;
 
     private ITrackedHook<LoadByteCodeDelegate> loadByteCodeHook;
     private ITrackedHook<SetCodeBufferDelegate> setCodeBufferHook;
@@ -39,14 +47,20 @@ internal unsafe class Hooks {
     public Hooks(ScriptModder modder, Interop interop) {
         this.modder = modder;
 
-        // We can't set an exception filter directly as the game overrides it, so we need to hook SetUnhandledExceptionFilter
         var kernel32 = LoadLibrary("kernel32.dll");
+
+        // We can't set an exception filter directly as the game overrides it, so we need to hook SetUnhandledExceptionFilter
         var setUnhandledExceptionFilter = GetProcAddress(kernel32, "SetUnhandledExceptionFilter");
         this.unhandledExceptionFilter = this.UnhandledExceptionFilter;
         this.setUnhandledExceptionFilterHook = interop.CreateHook<SetUnhandledExceptionFilterDelegate>(
             setUnhandledExceptionFilter,
             this.SetUnhandledExceptionFilterDetour);
         this.setUnhandledExceptionFilterHook.Enable();
+
+        // Redirect Godot's stdout to our pipe
+        var createFile = GetProcAddress(kernel32, "CreateFileW");
+        this.createFileHook = interop.CreateHook<CreateFileDelegate>(createFile, this.CreateFileDetour);
+        this.createFileHook.Enable();
 
         var patterns = new Dictionary<PatternType, string[]> {
             [PatternType.LoadByteCode] = [
@@ -94,6 +108,24 @@ internal unsafe class Hooks {
 
         _ = MessageBox(IntPtr.Zero, message, "GDWeave", 0x30);
         return 0;
+    }
+
+    private nint CreateFileDetour(
+        nint filename, uint desiredAccess, uint shareMode, nint securityAttributes, uint creationDisposition,
+        uint flagsAndAttributes, nint templateFile
+    ) {
+        var filenameStr = Marshal.PtrToStringUni(filename)?.TrimEnd('\0');
+        if (filenameStr == "CONOUT$") {
+            // CONOUT$ represents both stdout and stderr. Terrible hack for now to check which one comes first
+            filename = this.sentStdout
+                           ? ConsoleFixer.StderrPipeNameAlloc
+                           : ConsoleFixer.StdoutPipeNameAlloc;
+            this.sentStdout = true;
+        }
+
+        return this.createFileHook.Original(
+            filename, desiredAccess, shareMode, securityAttributes, creationDisposition, flagsAndAttributes,
+            templateFile);
     }
 
     private nint LoadByteCodeDetour(nint gdscript, GodotString* path) {
@@ -243,7 +275,6 @@ internal unsafe class Hooks {
             GodotVector.Dtor(this.Vector);
         }
     }
-
 
     [StructLayout(LayoutKind.Sequential)]
     private struct ExceptionPointersStruct {

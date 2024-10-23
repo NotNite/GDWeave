@@ -39,8 +39,6 @@ internal class GDWeave {
     }
 
     private static void Init() {
-        ConsoleFixer.Init();
-
         GameDir = Path.GetDirectoryName(Environment.ProcessPath!)!;
 
         var logPath = Path.Combine(GDWeaveDir, "GDWeave.log");
@@ -58,6 +56,7 @@ internal class GDWeave {
 
         Logger = config.CreateLogger();
         Log.Logger = Logger;
+        ConsoleFixer.Init();
 
         const string github = "https://github.com/NotNite/GDWeave";
         Logger.Information("This is GDWeave {Version} - {GitHub}", Version, github);
