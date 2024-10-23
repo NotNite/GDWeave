@@ -57,7 +57,7 @@ public class CodeGenerator
             case TokenType.Self:
                 return "self";
             case TokenType.BuiltInType:
-                return Enum.GetName<BuiltinType>((BuiltinType)data) ?? "<Invalid builtin type>";
+                return Enum.GetName<VariantType>((VariantType)data) ?? "<Invalid builtin type>";
             case TokenType.BuiltInFunc:
                 return Enum.GetName<BuiltinFunction>((BuiltinFunction)data) ?? "<Invalid builtin function>";
 
