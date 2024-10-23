@@ -33,7 +33,10 @@ public class CodeGenerator
             }
 
             writer.Write(gen);
-            writer.Write(' ');
+            if (!onNewLine)
+            {
+                writer.Write(' ');
+            }
         }
     }
 
