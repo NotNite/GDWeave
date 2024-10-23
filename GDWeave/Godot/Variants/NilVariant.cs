@@ -1,4 +1,4 @@
-﻿namespace GDWeave.Godot.Variants;
+namespace GDWeave.Godot.Variants;
 
 // Why does this exist
 public class NilVariant : Variant {
@@ -19,5 +19,9 @@ public class NilVariant : Variant {
 
     public override object Clone() {
         return new NilVariant();
+    }
+
+    public override object GetValue() {
+        return "nil";
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 
 namespace GDWeave.Godot.Variants;
 
@@ -42,5 +42,9 @@ public class StringVariant : Variant {
 
     public override object Clone() {
         return new StringVariant(this.Value);
+    }
+
+    public override object GetValue() {
+        return Value;
     }
 }

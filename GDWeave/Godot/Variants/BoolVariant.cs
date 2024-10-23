@@ -1,4 +1,4 @@
-﻿namespace GDWeave.Godot.Variants;
+namespace GDWeave.Godot.Variants;
 
 public class BoolVariant : Variant {
     public bool Value;
@@ -27,5 +27,9 @@ public class BoolVariant : Variant {
 
     public override object Clone() {
         return new BoolVariant(this.Value);
+    }
+
+    public override object GetValue() {
+        return Value;
     }
 }

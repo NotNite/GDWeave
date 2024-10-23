@@ -1,4 +1,4 @@
-﻿namespace GDWeave.Godot.Variants;
+namespace GDWeave.Godot.Variants;
 
 public class RealVariant : Variant {
     public double Value;
@@ -34,5 +34,9 @@ public class RealVariant : Variant {
 
     public override object Clone() {
         return new RealVariant(this.Value, this.Is64);
+    }
+
+    public override object GetValue() {
+        return Value;
     }
 }

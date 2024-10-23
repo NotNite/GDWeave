@@ -1,8 +1,8 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave", "GDWeave\GDWeave.csproj", "{CFF61119-51A6-4C46-AF1D-478AF111694D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave.Test", "GDWeave.Test\GDWeave.Test.csproj", "{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDWeave.Dumper", "GDWeave.Dumper\GDWeave.Dumper.csproj", "{F6F0C2BE-842F-4A44-ADC5-1617452C43FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

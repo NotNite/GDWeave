@@ -6,3 +6,5 @@
 bin/
 obj/
 target/
+GDWeave.Dumper/dump.log
+GDWeave.Dumper/dump.gdc
