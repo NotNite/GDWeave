@@ -91,7 +91,7 @@ internal class ModLoader {
     private IMod? LoadAssembly(string id, string assemblyPath) {
         var fullAssemblyPath = Path.GetFullPath(assemblyPath);
         var context = new ModLoadContext(fullAssemblyPath);
-        var assembly = context.LoadFromFile(fullAssemblyPath);
+        var assembly = context.LoadFromAssemblyPath(fullAssemblyPath);
         var modType = assembly.GetTypes().FirstOrDefault(t =>
             t.GetInterfaces().FirstOrDefault(t => t.FullName == typeof(IMod).FullName) != null);
 
