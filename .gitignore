@@ -7,4 +7,4 @@ bin/
 obj/
 target/
 GDWeave.Dumper/dump.log
-GDWeave.Dumper/dump.gdc
+GDWeave.Dumper/dump.gd

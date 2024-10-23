@@ -1,5 +1,4 @@
 using GDWeave.Godot;
-using GDWeave.Modding;
 
 public class CodeGenerator
 {
@@ -14,7 +13,7 @@ public class CodeGenerator
 
     public void Generate()
     {
-        using StreamWriter writer = new(File.Create("dump.gdc"));
+        using StreamWriter writer = new(File.Create("dump.gd"));
 
         int scope = 0;
         bool onNewLine = false;
