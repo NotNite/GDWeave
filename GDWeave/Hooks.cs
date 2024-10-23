@@ -111,28 +111,15 @@ internal unsafe class Hooks {
             using var br = new BinaryReader(ms);
             var gdsc = new GodotScriptFile(br);
 
-            if (this.dumpGdsc) {
-                try {
-                    var gameDir = Path.GetDirectoryName(Environment.ProcessPath)!;
-                    var outFile = Path.Combine(gameDir, "gdc", path.Replace("res://", ""));
-                    var outDir = Path.GetDirectoryName(outFile)!;
-
-                    if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
-                    if (File.Exists(outFile)) File.Delete(outFile);
-
-                    using var outFileHandle = File.OpenWrite(outFile);
-                    using var cleanBw = new BinaryWriter(outFileHandle);
-                    gdsc.Write(cleanBw);
-                } catch (Exception e) {
-                    this.logger.Warning(e, "Failed to write clean GDSC file");
-                }
-            }
+            if (this.dumpGdsc) this.DumpGdsc(gdsc, path, "gdc");
 
             try {
                 ran = this.modder.Run(gdsc, path);
             } catch (Exception e) {
                 this.logger.Error(e, "Failed to run mod on {Path}", path);
             }
+
+            if (this.dumpGdsc && ran) this.DumpGdsc(gdsc, path, "gdc_modded");
 
             using var output = new MemoryStream();
             using var bw = new BinaryWriter(output);
@@ -152,6 +139,23 @@ internal unsafe class Hooks {
 
         using var vec = new GodotVectorWrapper(data);
         return this.setCodeBufferHook.Original(tokenizerBuffer, vec.Vector);
+    }
+
+    private void DumpGdsc(GodotScriptFile script, string path, string dir) {
+        try {
+            var gameDir = Path.GetDirectoryName(Environment.ProcessPath)!;
+            var outFile = Path.Combine(gameDir, dir, path.Replace("res://", ""));
+            var outDir = Path.GetDirectoryName(outFile)!;
+
+            if (!Directory.Exists(outDir)) Directory.CreateDirectory(outDir);
+            if (File.Exists(outFile)) File.Delete(outFile);
+
+            using var outFileHandle = File.OpenWrite(outFile);
+            using var cleanBw = new BinaryWriter(outFileHandle);
+            script.Write(cleanBw);
+        } catch (Exception e) {
+            this.logger.Warning(e, "Failed to write GDSC file");
+        }
     }
 
     public static nint CowDataCtor(ReadOnlySpan<byte> buffer) {
