@@ -3,7 +3,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using GDWeave.Godot;
 using GDWeave.Modding;
 using Serilog;
@@ -16,6 +15,12 @@ internal unsafe class Hooks {
 
     // GDScriptTokenizerBuffer::set_code_buffer
     private delegate nint SetCodeBufferDelegate(nint tokenizerBuffer, GodotVector* codeBuffer);
+
+    private delegate nint SetUnhandledExceptionFilterDelegate(nint filter);
+    private delegate nint UnhandledExceptionFilterDelegate(ExceptionPointersStruct* exceptionInfo);
+
+    private ITrackedHook<SetUnhandledExceptionFilterDelegate> setUnhandledExceptionFilterHook;
+    private UnhandledExceptionFilterDelegate unhandledExceptionFilter;
 
     private ITrackedHook<LoadByteCodeDelegate> loadByteCodeHook;
     private ITrackedHook<SetCodeBufferDelegate> setCodeBufferHook;
@@ -33,6 +38,15 @@ internal unsafe class Hooks {
 
     public Hooks(ScriptModder modder, Interop interop) {
         this.modder = modder;
+
+        // We can't set an exception filter directly as the game overrides it, so we need to hook SetUnhandledExceptionFilter
+        var kernel32 = LoadLibrary("kernel32.dll");
+        var setUnhandledExceptionFilter = GetProcAddress(kernel32, "SetUnhandledExceptionFilter");
+        this.unhandledExceptionFilter = this.UnhandledExceptionFilter;
+        this.setUnhandledExceptionFilterHook = interop.CreateHook<SetUnhandledExceptionFilterDelegate>(
+            setUnhandledExceptionFilter,
+            this.SetUnhandledExceptionFilterDetour);
+        this.setUnhandledExceptionFilterHook.Enable();
 
         var patterns = new Dictionary<PatternType, string[]> {
             [PatternType.LoadByteCode] = [
@@ -58,6 +72,28 @@ internal unsafe class Hooks {
         var setCodeBufferAddr = interop.ScanText(patterns[PatternType.SetCode]);
         this.setCodeBufferHook = interop.CreateHook<SetCodeBufferDelegate>(setCodeBufferAddr, this.SetCodeBufferDetour);
         this.setCodeBufferHook.Enable();
+    }
+
+    private nint SetUnhandledExceptionFilterDetour(nint filter) {
+        return this.setUnhandledExceptionFilterHook.Original(
+            Marshal.GetFunctionPointerForDelegate(this.unhandledExceptionFilter));
+    }
+
+    private nint UnhandledExceptionFilter(ExceptionPointersStruct* exceptionInfo) {
+        this.logger.Error("========== UNHANDLED EXCEPTION!!!");
+        this.logger.Error("Exception code: {Code:X8}", exceptionInfo->ExceptionRecord->ExceptionCode);
+        this.logger.Error("Exception address: {Address:X8}", exceptionInfo->ExceptionRecord->ExceptionAddress);
+
+        const string message = """
+                               The game has crashed. Sorry! :(
+
+                               Try disabling some mods and see if the problem persists. It is very likely this issue was not caused by GDWeave itself but rather a mod.
+
+                               When asking for support, provide the log file in the GDWeave folder in your game install.
+                               """;
+
+        _ = MessageBox(IntPtr.Zero, message, "GDWeave", 0x30);
+        return 0;
     }
 
     private nint LoadByteCodeDetour(nint gdscript, GodotString* path) {
@@ -207,4 +243,30 @@ internal unsafe class Hooks {
             GodotVector.Dtor(this.Vector);
         }
     }
+
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ExceptionPointersStruct {
+        public ExceptionRecordStruct* ExceptionRecord;
+        // We don't care about context here
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct ExceptionRecordStruct {
+        public uint ExceptionCode;
+        public uint ExceptionFlags;
+        public nint ExceptionRecord;
+        public nint ExceptionAddress;
+        public uint NumberParameters;
+        public fixed uint ExceptionInformation[15];
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern nint LoadLibrary(string lpFileName);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi)]
+    private static extern nint GetProcAddress(nint hModule, string lpProcName);
+
+    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern int MessageBox(nint hwnd, string text, string caption, uint type);
 }
