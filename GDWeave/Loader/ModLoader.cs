@@ -13,11 +13,14 @@ internal class ModLoader {
     private readonly Dictionary<string, List<IScriptMod>> scriptMods = new();
 
     public ModLoader() {
-        this.Load();
+        this.Register();
         this.Sort();
+        this.LoadAssemblies();
+        this.logger.Information("Loaded {Count} mods: {ModIds}", this.LoadedMods.Count,
+            this.LoadedMods.Select(x => x.Manifest.Id));
     }
 
-    public void Load() {
+    private void Register() {
         var modsDir = Path.Combine(GDWeave.GDWeaveDir, "mods");
         if (!Directory.Exists(modsDir)) return;
 
@@ -25,23 +28,25 @@ internal class ModLoader {
             try {
                 var manifestPath = Path.Combine(modDir, "manifest.json");
                 if (!File.Exists(manifestPath)) {
-                    logger.Warning("Mod at {ModDir} does not have a manifest.json", modDir);
+                    this.logger.Warning("Mod at {ModDir} does not have a manifest.json", modDir);
                     continue;
                 }
 
                 var manifest = JsonSerializer.Deserialize<ModManifest>(File.ReadAllText(manifestPath))!;
-                if (manifest.Id != Path.GetFileName(modDir)) {
-                    logger.Warning("Mod at {ModDir} has an incorrect ID in its manifest", modDir);
+                if (this.LoadedMods.Any(x => x.Manifest.Id == manifest.Id)) {
+                    this.logger.Warning("Duplicate mod ID: {ModId}", manifest.Id);
                     continue;
                 }
 
-                var mod = manifest.AssemblyPath is { } assemblyPath
-                              ? this.LoadAssembly(manifest.Id, Path.Combine(modDir, assemblyPath))
-                              : null;
+                this.logger.Debug("Loading mod {ModId} from {ModDir}", manifest.Id, modDir);
 
                 var loadedMod = new LoadedMod {
                     Manifest = manifest,
-                    AssemblyMod = mod,
+                    Directory = modDir,
+                    AssemblyMod = null,
+                    AssemblyPath = manifest.AssemblyPath is { } assemblyPath
+                                       ? Path.Combine(modDir, assemblyPath)
+                                       : null,
                     PackPath = manifest.PackPath is { } packPath
                                    ? Path.Combine(modDir, packPath)
                                    : null
@@ -55,15 +60,19 @@ internal class ModLoader {
     }
 
     private void Sort() {
-        var dependencyGraph = this.LoadedMods.ToDictionary(x => x.Manifest.Id, x => x.Manifest.Dependencies);
-        foreach (var (modId, dependencies) in dependencyGraph) {
-            foreach (var dependency in dependencies.ToList()
-                         .Where(dependency => !dependencyGraph.ContainsKey(dependency))) {
-                this.logger.Warning("Mod {ModId} depends on missing mod {Dependency}", modId, dependency);
-                break;
+        while (true) {
+            var invalidMods = this.LoadedMods
+                .Where(x => x.Manifest.Dependencies.Any(d => !this.LoadedMods.Any(m => m.Manifest.Id == d))).ToList();
+            if (invalidMods.Count == 0) break;
+
+            foreach (var invalidMod in invalidMods) {
+                this.logger.Warning("Mod {ModId} has missing/invalid dependencies: {InvalidDependencies}",
+                    invalidMod.Manifest.Id, invalidMod.Manifest.Dependencies);
+                this.LoadedMods.Remove(invalidMod);
             }
         }
 
+        var dependencyGraph = this.LoadedMods.ToDictionary(x => x.Manifest.Id, x => x.Manifest.Dependencies);
         var resolvedOrder = new List<string>();
         while (dependencyGraph.Count > 0) {
             var noDependencies = dependencyGraph.Where(x => x.Value.Count == 0).ToList();
@@ -88,15 +97,30 @@ internal class ModLoader {
         this.LoadedMods = this.LoadedMods.OrderBy(x => resolvedOrder.IndexOf(x.Manifest.Id)).ToList();
     }
 
+    private void LoadAssemblies() {
+        foreach (var loadedMod in this.LoadedMods) {
+            if (loadedMod.AssemblyPath is not { } assemblyPath) continue;
+
+            try {
+                this.logger.Debug("Loading assembly for mod {ModId} from {AssemblyPath}", loadedMod.Manifest.Id,
+                    assemblyPath);
+                var assemblyMod = this.LoadAssembly(loadedMod.Manifest.Id, assemblyPath);
+                loadedMod.AssemblyMod = assemblyMod;
+            } catch (Exception e) {
+                this.logger.Warning(e, "Failed to load assembly for mod {ModId}", loadedMod.Manifest.Id);
+            }
+        }
+    }
+
     private IMod? LoadAssembly(string id, string assemblyPath) {
         var fullAssemblyPath = Path.GetFullPath(assemblyPath);
         var context = new ModLoadContext(fullAssemblyPath);
-        var assembly = context.LoadFromFile(fullAssemblyPath);
+        var assembly = context.LoadFromAssemblyPath(fullAssemblyPath);
         var modType = assembly.GetTypes().FirstOrDefault(t =>
             t.GetInterfaces().FirstOrDefault(t => t.FullName == typeof(IMod).FullName) != null);
 
         if (modType == null) {
-            logger.Warning("Assembly at {AssemblyPath} does not contain a mod", assemblyPath);
+            this.logger.Warning("Assembly at {AssemblyPath} does not contain a mod", assemblyPath);
             return null;
         }
 

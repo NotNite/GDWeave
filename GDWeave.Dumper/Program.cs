@@ -1,76 +1,58 @@
+using System.CommandLine;
 using GDWeave.Godot;
 using GDWeave.Modding;
 
-string path;
-if (args.Count() == 0)
-{
-    Console.WriteLine("Please input a script path");
-    return;
-}
+var rootCommand = new RootCommand("GDWeave.Dumper");
 
-path = args[0];
+var parseCommand = new Command("parse", "Parse a script file");
+rootCommand.AddCommand(parseCommand);
 
-bool shouldLog = false;
-bool shouldGenCode = false;
-if (args.Contains("log", StringComparer.OrdinalIgnoreCase))
-{
-    shouldLog = true;
-}
+var outputOption = new Option<string?>(["--output", "-o"], getDefaultValue: () => null);
+var codegenOption = new Option<bool>(["--codegen", "-c"], getDefaultValue: () => false);
+var pathArgument = new Argument<string>("path", "Path to the script file");
 
-if (args.Contains("codegen", StringComparer.OrdinalIgnoreCase))
-{
-    shouldGenCode = true;
-}
+parseCommand.AddOption(outputOption);
+parseCommand.AddOption(codegenOption);
+parseCommand.AddArgument(pathArgument);
 
-if (!File.Exists(path))
-{
-    Console.WriteLine($"Path '{path}' does not exist");
-    return;
-}
+parseCommand.SetHandler((output, codegen, path) => {
+        using var file = File.OpenRead(path);
+        using var binaryReader = new BinaryReader(file);
+        var scriptFile = new GodotScriptFile(binaryReader);
 
-using Stream file = File.OpenRead(path);
-using BinaryReader binaryReader = new(file);
-GodotScriptFile scriptFile = new(binaryReader);
+        using var outputStream = output is not null ? File.Create(output) : Console.OpenStandardOutput();
+        using var writer = new StreamWriter(outputStream);
 
-Stream output;
-if (shouldLog)
-{
-    output = File.Create("./dump.log");
-}
-else
-{
-    output = Console.OpenStandardOutput();
-}
+        var tokens = ScriptModder.CreateSpecialTokens(scriptFile);
 
-using StreamWriter writer = new(output);
+        if (codegen) {
+            var generator = new CodeGenerator(tokens, scriptFile.Identifiers);
+            generator.Generate(writer);
+        } else {
+            writer.WriteLine($"Identifiers: {scriptFile.Identifiers.Count}");
+            for (var i = 0; i < scriptFile.Identifiers.Count; i++) {
+                writer.WriteLine($"  {i}: {scriptFile.Identifiers[i]}");
+            }
 
-writer.WriteLine($"Identifiers: {scriptFile.Identifiers.Count}");
-for (int i = 0; i < scriptFile.Identifiers.Count; i++)
-{
-    writer.WriteLine($"  {i}: {scriptFile.Identifiers[i]}");
-}
+            writer.WriteLine($"Constants: {scriptFile.Constants.Count}");
+            for (var i = 0; i < scriptFile.Constants.Count; i++) {
+                writer.WriteLine($"  {i}: {scriptFile.Constants[i]}");
+            }
 
-writer.WriteLine($"Constants: {scriptFile.Constants.Count}");
-for (int i = 0; i < scriptFile.Constants.Count; i++)
-{
-    writer.WriteLine($"  {i}: {scriptFile.Constants[i]}");
-}
+            writer.WriteLine($"Lines: {scriptFile.Lines.Count}");
+            for (var i = 0; i < scriptFile.Lines.Count; i++) {
+                writer.WriteLine($"  {i}: {scriptFile.Lines[i].Token} {scriptFile.Lines[i].LineCol}");
+            }
 
-writer.WriteLine($"Lines: {scriptFile.Lines.Count}");
-for (int i = 0; i < scriptFile.Lines.Count; i++)
-{
-    writer.WriteLine($"  {i}: {scriptFile.Lines[i].Token} {scriptFile.Lines[i].LineCol}");
-}
+            writer.WriteLine($"Tokens: {scriptFile.Tokens.Count}");
+            for (var i = 0; i < tokens.Count; i++) {
+                writer.WriteLine($"  {i}: {tokens[i]}");
+            }
+        }
+    },
+    outputOption,
+    codegenOption,
+    pathArgument
+);
 
-writer.WriteLine($"Tokens: {scriptFile.Tokens.Count}");
-List<Token> tokens = ScriptModder.CreateSpecialTokens(scriptFile);
-for (int i = 0; i < tokens.Count; i++)
-{
-    writer.WriteLine($"  {i}: {tokens[i]}");
-}
-
-if (shouldGenCode)
-{
-    CodeGenerator generator = new(tokens, scriptFile.Identifiers);
-    generator.Generate();
-}
+await rootCommand.InvokeAsync(args);

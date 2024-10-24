@@ -3,7 +3,7 @@ namespace GDWeave.Godot.Variants;
 // Why does this exist
 public class NilVariant : Variant {
     public NilVariant(VariantParser.ParserReaderContext ctx) { }
-    private NilVariant() { }
+    public NilVariant() { }
 
     public override void Write(VariantParser.ParserWriterContext ctx) {
         ctx.WriteType(VariantType.Nil);

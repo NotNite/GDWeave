@@ -47,10 +47,16 @@ Set these environment variables to any value (e.g. `GDWEAVE_DEBUG=1`) to enable 
 
 ### Disassembling scripts
 
-You can use `GDWeave.Test` to disassemble a script:
+You can use `GDWeave.Dumper` to disassemble a script:
 
 ```shell
-dotnet run --project ./GDWeave.Test -- parse /path/to/script.gdc
+dotnet run --project ./GDWeave.Dumper -- parse /path/to/script.gdc
 ```
 
 This will show you the list of tokens used in that script, as well as some other information.
+
+You can specify the following options:
+
+- `--output=<file>`: Write the output to a file instead of standard output.
+- `--codegen`: Generates an approximatation of the GDScript source code.
+  - The generator needs work, but for the time being, generates readable code. It currently struggles with indenting.

@@ -1,65 +1,46 @@
 using GDWeave.Godot;
 
-public class CodeGenerator
-{
-    private readonly List<string> _Identifiers;
-    private readonly List<Token> _Tokens;
+public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
+    public void Generate(StreamWriter writer) {
+        var scope = 0;
+        var onNewLine = false;
 
-    public CodeGenerator(List<Token> tokens, List<string> identifiers)
-    {
-        _Identifiers = identifiers;
-        _Tokens = tokens;
-    }
-
-    public void Generate()
-    {
-        using StreamWriter writer = new(File.Create("dump.gd"));
-
-        int scope = 0;
-        bool onNewLine = false;
-
-        foreach (Token token in _Tokens)
-        {
-            string gen = GenerateToken(token, ref scope);
-            if (onNewLine)
-            {
+        foreach (var token in tokens) {
+            var gen = this.GenerateToken(token, ref scope);
+            if (onNewLine) {
                 onNewLine = false;
-                for (int i = 0; i < scope; i++) writer.Write('\t');
+                for (var i = 0; i < scope; i++) writer.Write('\t');
             }
 
-            if (gen == "\n")
-            {
+            if (gen == "\n") {
                 onNewLine = true;
             }
 
             writer.Write(gen);
-            if (!onNewLine)
-            {
+            if (!onNewLine) {
                 writer.Write(' ');
             }
         }
     }
 
-    private string GenerateToken(Token token, ref int scope)
-    {
-        int data = (int?)token.AssociatedData ?? 0;
-        switch (token.Type)
-        {
+    private string GenerateToken(Token token, ref int scope) {
+        var data = (int?) token.AssociatedData ?? 0;
+        switch (token.Type) {
             case TokenType.Empty:
                 break;
             case TokenType.Identifier:
-                return $"{_Identifiers[data]}";
+                return $"{identifiers[data]}";
             case TokenType.Constant:
-                ConstantToken constantToken = (ConstantToken)token;
+                var constantToken = (ConstantToken) token;
                 return constantToken.Value.GetValue().ToString() ?? "<Failed to convert to string>";
             case TokenType.Newline:
                 return "\n";
             case TokenType.Self:
                 return "self";
             case TokenType.BuiltInType:
-                return Enum.GetName<VariantType>((VariantType)data) ?? "<Invalid builtin type>";
+                return Enum.GetName((VariantType) data) ?? "<Invalid builtin type>";
             case TokenType.BuiltInFunc:
-                return Enum.GetName<BuiltinFunction>((BuiltinFunction)data) ?? "<Invalid builtin function>";
+                return Enum.GetName((BuiltinFunction) data) ?? "<Invalid builtin function>";
 
             case TokenType.OpIn:
                 return "in";
@@ -148,7 +129,7 @@ public class CodeGenerator
             case TokenType.PrClass:
                 return "class";
             case TokenType.PrClassName:
-                return $"{_Identifiers[data]}";
+                return $"{identifiers[data]}";
 
             case TokenType.PrExtends:
                 return "extends";
@@ -258,6 +239,16 @@ public class CodeGenerator
             // Not sure what this is for either
             case TokenType.Cursor:
                 return "cursor";
+            case TokenType.OpMod:
+                break;
+            case TokenType.OpAssignMod:
+                break;
+            case TokenType.OpBitInvert:
+                break;
+            case TokenType.CfElse:
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
         }
 
         return "";
