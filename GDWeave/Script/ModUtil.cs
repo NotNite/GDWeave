@@ -1,4 +1,4 @@
-﻿using GDWeave.Godot;
+using GDWeave.Godot;
 
 namespace GDWeave.Modding;
 
@@ -8,6 +8,57 @@ public interface IWaiter {
     public void Reset();
     public void SetReady();
     public bool Check(Token token);
+}
+
+public class FunctionWaiter : IWaiter {
+    private MultiTokenWaiter functionWaiter;
+
+    public bool Matched {get; private set;} = false;
+    public bool Ready {get; private set;} = true;
+
+    public FunctionWaiter(string name, bool waitForReady = false) {
+        functionWaiter = new([
+            t => t.Type == TokenType.PrFunction,
+            t => t is IdentifierToken identifier && identifier.Name == name,
+        ]);
+    }
+
+    public void Reset() {
+        foundFunction = false;
+        foundColon = false;
+    }
+
+    public void SetReady() {
+        Ready = true;
+    }
+
+    private bool foundFunction = false;
+    private bool foundColon = false;
+    public bool Check(Token token) {
+        if (!Ready) {
+            return false;
+        }
+
+        if (foundColon) {
+            Matched = true;
+            return true;
+        }
+
+        if (foundFunction && token.Type == TokenType.Colon) {
+            foundColon = true;
+            return false;
+        }
+
+        if (!functionWaiter.Check(token)) {
+            foundFunction = true;
+            return false;
+        }
+        else {
+            functionWaiter.Reset();
+        }
+
+        return false;
+    }
 }
 
 public class TokenWaiter(Func<Token, bool> check, bool waitForReady = false) : IWaiter {

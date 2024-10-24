@@ -107,6 +107,8 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
 
             case TokenType.CfIf:
                 return "if";
+            case TokenType.CfElse:
+                return "else";
             case TokenType.CfElif:
                 return "elif";
             case TokenType.CfFor:
@@ -240,17 +242,13 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             case TokenType.Cursor:
                 return "cursor";
             case TokenType.OpMod:
-                break;
+                return "%";
             case TokenType.OpAssignMod:
-                break;
+                return "%=";
             case TokenType.OpBitInvert:
-                break;
-            case TokenType.CfElse:
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
+                return "~";
         }
 
-        return "";
+        throw new ArgumentOutOfRangeException();
     }
 }
