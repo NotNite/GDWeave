@@ -247,8 +247,8 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                 return "%=";
             case TokenType.OpBitInvert:
                 return "~";
-            default:
-                throw new ArgumentOutOfRangeException();
         }
+
+        throw new ArgumentOutOfRangeException();
     }
 }
