@@ -19,30 +19,30 @@ public class FunctionWaiter : IWaiter {
     public bool Matched {get; private set;} = false;
     public bool Ready {get; private set;} = true;
 
-    private readonly string _Name;
+    private readonly string name;
     public FunctionWaiter(string name) {
-        _Name = name;
+        this.name = name;
     }
 
     public void Reset() {
-        _FoundFunction = false;
-        _FoundColon = false;
+        foundFunction = false;
+        foundColon = false;
     }
 
     public void SetReady() {
         Ready = true;
     }
 
-    private bool _FoundFunction = false;
-    private bool _FoundColon = false;
+    private bool foundFunction = false;
+    private bool foundColon = false;
     public bool Check(Token token) {
-        if (_FoundColon && token.Type == TokenType.Newline) {
+        if (foundColon && token.Type == TokenType.Newline) {
             Reset();
             return true;
         }
 
-        if (_FoundFunction && token.Type == TokenType.Colon) {
-            _FoundColon = true;
+        if (foundFunction && token.Type == TokenType.Colon) {
+            foundColon = true;
             return false;
         }
 
@@ -54,8 +54,8 @@ public class FunctionWaiter : IWaiter {
         }
 
         if (token is IdentifierToken idToken)
-        if (idToken.Name == _Name) {
-            _FoundFunction = true;
+        if (idToken.Name == name) {
+            foundFunction = true;
         }
 
         return false;
