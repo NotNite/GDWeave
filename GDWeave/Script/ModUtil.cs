@@ -39,7 +39,7 @@ public class FunctionWaiter : IWaiter {
             return false;
         }
 
-        if (foundColon && token.Type == TokenType.Newline) {
+        if (foundColon) {
             Matched = true;
             return true;
         }
