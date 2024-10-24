@@ -240,17 +240,15 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             case TokenType.Cursor:
                 return "cursor";
             case TokenType.OpMod:
-                break;
+                return "%";
             case TokenType.OpAssignMod:
-                break;
+                return "%=";
             case TokenType.OpBitInvert:
-                break;
+                return "~";
             case TokenType.CfElse:
-                break;
+                return "else";
             default:
                 throw new ArgumentOutOfRangeException();
         }
-
-        return "";
     }
 }
