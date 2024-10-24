@@ -16,7 +16,7 @@ public class FunctionWaiter : IWaiter {
     public bool Matched {get; private set;} = false;
     public bool Ready {get; private set;} = true;
 
-    public FunctionWaiter(string name) {
+    public FunctionWaiter(string name, bool waitForReady = false) {
         functionWaiter = new([
             t => t.Type == TokenType.PrFunction,
             t => t is IdentifierToken identifier && identifier.Name == name,
@@ -35,8 +35,12 @@ public class FunctionWaiter : IWaiter {
     private bool foundFunction = false;
     private bool foundColon = false;
     public bool Check(Token token) {
+        if (!Ready) {
+            return false;
+        }
+
         if (foundColon && token.Type == TokenType.Newline) {
-            Reset();
+            Matched = true;
             return true;
         }
 
