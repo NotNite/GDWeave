@@ -11,17 +11,16 @@ public interface IWaiter {
 }
 
 public class FunctionWaiter : IWaiter {
-    private MultiTokenWaiter _FunctionWaiter = new([
-        t => t.Type == TokenType.PrFunction,
-        t => t.Type == TokenType.Identifier,
-    ]);
+    private MultiTokenWaiter functionWaiter;
 
     public bool Matched {get; private set;} = false;
     public bool Ready {get; private set;} = true;
 
-    private readonly string name;
     public FunctionWaiter(string name) {
-        this.name = name;
+        functionWaiter = new([
+            t => t.Type == TokenType.PrFunction,
+            t => t is IdentifierToken identifier && identifier.Name == name,
+        ]);
     }
 
     public void Reset() {
@@ -46,16 +45,12 @@ public class FunctionWaiter : IWaiter {
             return false;
         }
 
-        if (!_FunctionWaiter.Check(token)) {
+        if (!functionWaiter.Check(token)) {
+            foundFunction = true;
             return false;
         }
         else {
-            _FunctionWaiter.Reset();
-        }
-
-        if (token is IdentifierToken idToken)
-        if (idToken.Name == name) {
-            foundFunction = true;
+            functionWaiter.Reset();
         }
 
         return false;
