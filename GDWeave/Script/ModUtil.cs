@@ -1,4 +1,4 @@
-﻿using GDWeave.Godot;
+using GDWeave.Godot;
 
 namespace GDWeave.Modding;
 
@@ -8,6 +8,66 @@ public interface IWaiter {
     public void Reset();
     public void SetReady();
     public bool Check(Token token);
+}
+
+public class FunctionWaiter : IWaiter {
+    private MultiTokenWaiter _FunctionWaiter = new([
+        t => t.Type == TokenType.PrFunction,
+        t => t.Type == TokenType.Identifier,
+    ]);
+
+    public bool Matched {get; private set;} = false;
+    public bool Ready {get; private set;} = true;
+
+    private readonly string _Name;
+    public FunctionWaiter(string name)
+    {
+        _Name = name;
+    }
+
+    public void Reset() {
+        _FoundFunction = false;
+        _FoundColon = false;
+    }
+
+    public void SetReady() {
+        Ready = true;
+    }
+
+    private bool _FoundFunction = false;
+    private bool _FoundColon = false;
+    public bool Check(Token token)
+    {
+        if (_FoundColon && token.Type == TokenType.Newline)
+        {
+            Reset();
+            return true;
+        }
+
+        if (_FoundFunction && token.Type == TokenType.Colon)
+        {
+            _FoundColon = true;
+            return false;
+        }
+
+        if (!_FunctionWaiter.Check(token))
+        {
+            return false;
+        }
+        else
+        {
+            _FunctionWaiter.Reset();
+        }
+
+        if (token is IdentifierToken idToken)
+        if (idToken.Name == _Name)
+        {
+            Serilog.Log.Information($"Found token: {idToken.Name}");
+            _FoundFunction = true;
+        }
+
+        return false;
+    }
 }
 
 public class TokenWaiter(Func<Token, bool> check, bool waitForReady = false) : IWaiter {
