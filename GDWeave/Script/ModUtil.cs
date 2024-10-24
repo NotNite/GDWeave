@@ -20,8 +20,7 @@ public class FunctionWaiter : IWaiter {
     public bool Ready {get; private set;} = true;
 
     private readonly string _Name;
-    public FunctionWaiter(string name)
-    {
+    public FunctionWaiter(string name) {
         _Name = name;
     }
 
@@ -36,33 +35,26 @@ public class FunctionWaiter : IWaiter {
 
     private bool _FoundFunction = false;
     private bool _FoundColon = false;
-    public bool Check(Token token)
-    {
-        if (_FoundColon && token.Type == TokenType.Newline)
-        {
+    public bool Check(Token token) {
+        if (_FoundColon && token.Type == TokenType.Newline) {
             Reset();
             return true;
         }
 
-        if (_FoundFunction && token.Type == TokenType.Colon)
-        {
+        if (_FoundFunction && token.Type == TokenType.Colon) {
             _FoundColon = true;
             return false;
         }
 
-        if (!_FunctionWaiter.Check(token))
-        {
+        if (!_FunctionWaiter.Check(token)) {
             return false;
         }
-        else
-        {
+        else {
             _FunctionWaiter.Reset();
         }
 
         if (token is IdentifierToken idToken)
-        if (idToken.Name == _Name)
-        {
-            Serilog.Log.Information($"Found token: {idToken.Name}");
+        if (idToken.Name == _Name) {
             _FoundFunction = true;
         }
 
