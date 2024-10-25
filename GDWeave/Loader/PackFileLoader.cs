@@ -49,6 +49,15 @@ internal class PackFileLoader(List<LoadedMod> mods) : IScriptMod {
                     yield return new Token(TokenType.ParenthesisClose);
                     yield return token;
 
+                    // mod.Manifest.Id.add_to_group("weave_mod")
+                    yield return new IdentifierToken($"{mod.Manifest.Id}");
+                    yield return new Token(TokenType.Period);
+                    yield return new IdentifierToken("add_to_group");
+                    yield return new Token(TokenType.ParenthesisOpen);
+                    yield return new ConstantToken(new StringVariant("weave_mod"));
+                    yield return new Token(TokenType.ParenthesisClose);
+                    yield return token;
+
                     // mod.Manifest.Id.set_name("mod.Manifest.Id")
                     yield return new IdentifierToken($"{mod.Manifest.Id}");
                     yield return new Token(TokenType.Period);
