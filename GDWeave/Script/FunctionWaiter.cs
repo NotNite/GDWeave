@@ -46,8 +46,4 @@ public class FunctionWaiter(string name, bool waitForReady = false) : IWaiter {
 
         return false;
     }
-
-    public bool Check(Token token) {
-        throw new NotImplementedException();
-    }
 }
