@@ -54,7 +54,7 @@ internal class PackFileLoader(List<LoadedMod> mods) : IScriptMod {
                     yield return new Token(TokenType.Period);
                     yield return new IdentifierToken("add_to_group");
                     yield return new Token(TokenType.ParenthesisOpen);
-                    yield return new ConstantToken(new StringVariant("weave_mod"));
+                    yield return new ConstantToken(new StringVariant("gdweave_mod"));
                     yield return new Token(TokenType.ParenthesisClose);
                     yield return token;
 
