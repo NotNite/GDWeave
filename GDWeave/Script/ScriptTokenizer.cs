@@ -5,7 +5,7 @@ using GDWeave.Godot.Variants;
 namespace GDWeave.Modding;
 
 public static class ScriptTokenizer {
-    private readonly static Dictionary<string, TokenType> Tokens = new() {
+    private static readonly Dictionary<string, TokenType> Tokens = new() {
         {"continue", TokenType.CfContinue},
         {"return", TokenType.CfReturn},
         {"break", TokenType.CfBreak},
@@ -183,21 +183,20 @@ public static class ScriptTokenizer {
     private static readonly List<string> BuiltinFunctions = Enum.GetNames<BuiltinFunction>().ToList();
 
     public static IEnumerable<Token> Tokenize(string gdScript, uint baseIndent = 0) {
-        IEnumerable<string> tokens = SanitizeInput(TokenizeString(gdScript + " "));
+        var tokens = SanitizeInput(TokenizeString(gdScript + " "));
 
-        string previous = string.Empty;
-        string idName = string.Empty;
+        var previous = string.Empty;
+        var idName = string.Empty;
 
         List<Token> toFlush = new(2);
         yield return new Token(TokenType.Newline, baseIndent);
-        foreach (string current in tokens) {
+        foreach (var current in tokens) {
             if (current == "\n") {
                 goto endAndFlushId;
             }
 
-            if (previous == "\n")
-            {
-                uint tabCount = uint.Parse(current);
+            if (previous == "\n") {
+                var tabCount = uint.Parse(current);
                 toFlush.Add(new Token(TokenType.Newline, tabCount + baseIndent));
                 goto end;
             }
@@ -210,18 +209,17 @@ public static class ScriptTokenizer {
                 toFlush.Add(new Token(TokenType.Wildcard));
                 toFlush.Add(new Token(TokenType.Semicolon));
                 goto endAndFlushId;
-            }
-            else if (previous == "_") {
+            } else if (previous == "_") {
                 idName += "_" + current;
                 goto end;
             }
 
             if (BuiltinFunctions.Contains(current)) {
-                toFlush.Add(new Token(TokenType.BuiltInFunc, (uint?)BuiltinFunctions.IndexOf(current)));
+                toFlush.Add(new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunctions.IndexOf(current)));
                 goto endAndFlushId;
             }
 
-            if (Tokens.TryGetValue(current, out TokenType type)) {
+            if (Tokens.TryGetValue(current, out var type)) {
                 toFlush.Add(new Token(type));
                 goto endAndFlushId;
             }
@@ -231,18 +229,17 @@ public static class ScriptTokenizer {
                 goto endAndFlushId;
             }
 
-            if (bool.TryParse(current, out bool resultB))
-            {
+            if (bool.TryParse(current, out var resultB)) {
                 toFlush.Add(new ConstantToken(new BoolVariant(resultB)));
                 goto endAndFlushId;
             }
 
-            if (long.TryParse(current, out long resultL)) {
+            if (long.TryParse(current, out var resultL)) {
                 toFlush.Add(new ConstantToken(new IntVariant(resultL)));
                 goto endAndFlushId;
             }
 
-            if (double.TryParse(current, out double result)) {
+            if (double.TryParse(current, out var result)) {
                 toFlush.Add(new ConstantToken(new RealVariant(result)));
                 goto endAndFlushId;
             }
@@ -250,14 +247,14 @@ public static class ScriptTokenizer {
             idName += current;
 
             goto end;
-endAndFlushId:
+            endAndFlushId:
             if (idName != string.Empty) {
                 yield return new IdentifierToken(idName);
                 idName = string.Empty;
             }
-end:
+            end:
             previous = current;
-            foreach (Token token in toFlush) yield return token;
+            foreach (var token in toFlush) yield return token;
             toFlush.Clear();
         }
 
@@ -265,7 +262,7 @@ end:
     }
 
     private static IEnumerable<string> SanitizeInput(IEnumerable<string> tokens) {
-        foreach (string token in tokens) {
+        foreach (var token in tokens) {
             if (token != "\n" && string.IsNullOrWhiteSpace(token)) {
                 continue;
             }
@@ -276,47 +273,48 @@ end:
 
     private static IEnumerable<string> TokenizeString(string text) {
         StringBuilder builder = new(20);
-        for (int i = 0; i < text.Length; i++) {
-            if (text[i] == '"') {
-                yield return ClearBuilder();
-                builder.Append('"');
-                i++;
-                for (; i < text.Length; i++) {
-                    builder.Append(text[i]);
-                    if (text[i] == '"') {
-                        break;
+        for (var i = 0; i < text.Length; i++) {
+            switch (text[i]) {
+                case '"': {
+                    yield return ClearBuilder();
+                    builder.Append('"');
+                    i++;
+                    for (; i < text.Length; i++) {
+                        builder.Append(text[i]);
+                        if (text[i] == '"') {
+                            break;
+                        }
                     }
+
+                    yield return ClearBuilder();
+                    continue;
                 }
 
-                yield return ClearBuilder();
-                continue;
+                // This is stupid and awful
+                case '\n': {
+                    yield return ClearBuilder();
+                    var start = i;
+                    i++;
+                    for (; i < text.Length && text[i] == ' '; i++) ;
+                    i--;
+                    yield return "\n";
+                    yield return $"{(i - start) / 4}";
+                    continue;
+                }
             }
 
-            // This is stupid and awful
-            if (text[i] == '\n') {
-                yield return ClearBuilder();
-                int start = i;
-                i++;
-                for (; i < text.Length && text[i] == ' '; i++);
-                i--;
-                yield return "\n";
-                yield return $"{(i - start) / 4}";
-                continue;
+            var matched = false;
+            foreach (var delimiter in Symbols) {
+                if (Match(text, i, delimiter)) {
+                    yield return ClearBuilder();
+                    yield return delimiter;
+                    i += delimiter.Length - 1;
+                    matched = true;
+                    break;
+                }
             }
 
-            bool matched = false;
-            foreach (string delimiter in Symbols)
-            if (Match(text, i, delimiter)) {
-                yield return ClearBuilder();
-                yield return delimiter;
-                i += delimiter.Length - 1;
-                matched = true;
-                break;
-            }
-
-            if (matched) {
-                continue;
-            }
+            if (matched) continue;
 
             if (text[i] == ' ') {
                 yield return ClearBuilder();
@@ -329,7 +327,7 @@ end:
         yield return "\n";
 
         string ClearBuilder() {
-            string built = builder.ToString();
+            var built = builder.ToString();
             builder.Clear();
             return built;
         }

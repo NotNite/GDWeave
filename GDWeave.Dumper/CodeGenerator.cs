@@ -2,14 +2,13 @@ using GDWeave.Godot;
 
 public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
     public void Generate(StreamWriter writer) {
-        uint tabs = 0;
         foreach (var token in tokens) {
-            tabs = 0;
+            var tabs = 0u;
             var gen = this.GenerateToken(token, ref tabs);
 
             writer.Write(gen);
 
-            for (int i = 0; i < tabs; i++) {
+            for (var i = 0; i < tabs; i++) {
                 writer.Write('\t');
             }
         }
