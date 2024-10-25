@@ -7,6 +7,7 @@ namespace GDWeave;
 
 internal class ModInterface(string modId, ModLoader modLoader) : IModInterface {
     public ILogger Logger { get; } = GDWeave.Logger.ForContext("SourceContext", modId);
+    public string[] LoadedMods => modLoader.LoadedMods.Select(x => x.Manifest.Id).ToArray();
 
     private string GetConfigPath() => Path.Combine(GDWeave.GDWeaveDir, "configs", $"{modId}.json");
 

@@ -5,6 +5,7 @@ namespace GDWeave;
 
 public interface IModInterface {
     public ILogger Logger { get; }
+    public string[] LoadedMods { get; }
 
     public T ReadConfig<T>() where T : class, new();
     public void WriteConfig<T>(T config) where T : class;
