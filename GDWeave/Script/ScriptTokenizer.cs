@@ -1,3 +1,4 @@
+using System.Text;
 using GDWeave.Godot;
 using GDWeave.Godot.Variants;
 
@@ -120,23 +121,6 @@ public static class ScriptTokenizer {
     };
 
     private static readonly HashSet<string> Symbols = new() {
-        "_",
-
-        "[",
-        "]",
-
-        "{",
-        "}",
-
-        "(",
-        ")",
-
-        ",",
-        ";",
-        ".",
-        "?",
-        ":",
-        "$",
         "->",
 
         ">>=",
@@ -160,6 +144,23 @@ public static class ScriptTokenizer {
         "|=",
         "^=",
 
+        "_",
+
+        "[",
+        "]",
+
+        "{",
+        "}",
+
+        "(",
+        ")",
+
+        ",",
+        ";",
+        ".",
+        "?",
+        ":",
+        "$",
         "+",
         "-",
         "*",
@@ -177,25 +178,26 @@ public static class ScriptTokenizer {
         ">",
 
         "=",
-        "\n",
     };
 
-    public static IEnumerable<Token> Tokenize(string gdScript) {
-        IEnumerable<string> tokens =  SanitizeInput(TokenizeString(gdScript + " "));
-
-        foreach (string current in tokens) {
-            Serilog.Log.Information(current);
-        }
+    public static IEnumerable<Token> Tokenize(string gdScript, uint baseIndent = 0) {
+        IEnumerable<string> tokens = SanitizeInput(TokenizeString(gdScript + " "));
 
         string previous = string.Empty;
         string idName = string.Empty;
 
         List<Token> toFlush = new(2);
+        yield return new Token(TokenType.Newline, baseIndent);
         foreach (string current in tokens) {
             if (current == "\n") {
-                // Weird thing but it'll crash without it
-                toFlush.Add(new Token(TokenType.Newline, 1));
                 goto endAndFlushId;
+            }
+
+            if (previous == "\n")
+            {
+                uint tabCount = uint.Parse(current);
+                toFlush.Add(new Token(TokenType.Newline, tabCount + baseIndent));
+                goto end;
             }
 
             if (current == "_") {
@@ -222,13 +224,19 @@ public static class ScriptTokenizer {
                 goto endAndFlushId;
             }
 
-            if (double.TryParse(current, out double result)) {
-                toFlush.Add(new ConstantToken(new RealVariant(result)));
+            if (bool.TryParse(current, out bool resultB))
+            {
+                toFlush.Add(new ConstantToken(new BoolVariant(resultB)));
                 goto endAndFlushId;
             }
 
             if (long.TryParse(current, out long resultL)) {
                 toFlush.Add(new ConstantToken(new IntVariant(resultL)));
+                goto endAndFlushId;
+            }
+
+            if (double.TryParse(current, out double result)) {
+                toFlush.Add(new ConstantToken(new RealVariant(result)));
                 goto endAndFlushId;
             }
 
@@ -245,6 +253,8 @@ end:
             foreach (Token token in toFlush) yield return token;
             toFlush.Clear();
         }
+
+        yield return new(TokenType.Newline, baseIndent);
     }
 
     private static IEnumerable<string> SanitizeInput(IEnumerable<string> tokens) {
@@ -258,40 +268,64 @@ end:
     }
 
     private static IEnumerable<string> TokenizeString(string text) {
-        int start = 0;
+        StringBuilder builder = new(20);
         for (int i = 0; i < text.Length; i++) {
-            char c = text[i];
-            if (c == '"')
-            {
-                yield return text.Substring(start, i - start).Trim();
-                start = i;
+            if (text[i] == '"') {
+                yield return ClearBuilder();
+                builder.Append('"');
                 i++;
+                for (; i < text.Length; i++) {
+                    builder.Append(text[i]);
+                    if (text[i] == '"') {
+                        break;
+                    }
+                }
 
-                for (; i < text.Length && text[i] != '"'; i++);
-
-                i++;
-                yield return text.Substring(start, i - start).Trim();
-                start = i;
+                yield return ClearBuilder();
                 continue;
             }
 
+            // This is stupid and awful
+            if (text[i] == '\n') {
+                yield return ClearBuilder();
+                int start = i;
+                i++;
+                for (; i < text.Length && text[i] == ' '; i++);
+                i--;
+                yield return "\n";
+                yield return $"{(i - start) / 4}";
+                continue;
+            }
+
+            bool matched = false;
             foreach (string delimiter in Symbols)
             if (Match(text, i, delimiter)) {
-                yield return text.Substring(start, i - start).Trim();
-                i += delimiter.Length - 1;
-                start = i + 1;
-
+                yield return ClearBuilder();
                 yield return delimiter;
+                i += delimiter.Length - 1;
+                matched = true;
+                break;
+            }
+
+            if (matched) {
                 continue;
             }
 
-            if (c == ' ') {
-                yield return text.Substring(start, i - start).Trim();
-                start = i;
+            if (text[i] == ' ') {
+                yield return ClearBuilder();
                 continue;
             }
+
+            builder.Append(text[i]);
         }
+
         yield return "\n";
+
+        string ClearBuilder() {
+            string built = builder.ToString();
+            builder.Clear();
+            return built;
+        }
     }
 
     private static bool Match(string text, int index, string match) {
