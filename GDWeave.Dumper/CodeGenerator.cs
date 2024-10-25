@@ -2,28 +2,20 @@ using GDWeave.Godot;
 
 public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
     public void Generate(StreamWriter writer) {
-        var scope = 0;
-        var onNewLine = false;
-
+        uint tabs = 0;
         foreach (var token in tokens) {
-            var gen = this.GenerateToken(token, ref scope);
-            if (onNewLine) {
-                onNewLine = false;
-                for (var i = 0; i < scope; i++) writer.Write('\t');
-            }
-
-            if (gen == "\n") {
-                onNewLine = true;
-            }
+            tabs = 0;
+            var gen = this.GenerateToken(token, ref tabs);
 
             writer.Write(gen);
-            if (!onNewLine) {
-                writer.Write(' ');
+
+            for (int i = 0; i < tabs; i++) {
+                writer.Write('\t');
             }
         }
     }
 
-    private string GenerateToken(Token token, ref int scope) {
+    private string GenerateToken(Token token, ref uint tabs) {
         var data = (int?) token.AssociatedData ?? 0;
         switch (token.Type) {
             case TokenType.Empty:
@@ -34,6 +26,7 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                 var constantToken = (ConstantToken) token;
                 return constantToken.Value.GetValue().ToString() ?? "<Failed to convert to string>";
             case TokenType.Newline:
+                tabs = token.AssociatedData ?? 0;
                 return "\n";
             case TokenType.Self:
                 return "self";
@@ -41,7 +34,6 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                 return Enum.GetName((VariantType) data) ?? "<Invalid builtin type>";
             case TokenType.BuiltInFunc:
                 return Enum.GetName((BuiltinFunction) data) ?? "<Invalid builtin function>";
-
             case TokenType.OpIn:
                 return "in";
             case TokenType.OpEqual:
@@ -197,10 +189,8 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                 return "]";
 
             case TokenType.CurlyBracketOpen:
-                scope++;
                 return "{";
             case TokenType.CurlyBracketClose:
-                scope--;
                 return "}";
 
             case TokenType.ParenthesisOpen:

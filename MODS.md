@@ -59,4 +59,3 @@ You can specify the following options:
 
 - `--output=<file>`: Write the output to a file instead of standard output.
 - `--codegen`: Generates an approximatation of the GDScript source code.
-  - The generator needs work, but for the time being, generates readable code. It currently struggles with indenting.

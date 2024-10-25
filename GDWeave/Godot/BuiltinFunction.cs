@@ -1,4 +1,4 @@
-﻿// TODO: engine-dependent
+// TODO: engine-dependent
 
 namespace GDWeave.Godot;
 
