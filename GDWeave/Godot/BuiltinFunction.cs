@@ -1,4 +1,4 @@
-﻿// TODO: engine-dependent
+// TODO: engine-dependent
 
 namespace GDWeave.Godot;
 
@@ -6,8 +6,7 @@ public enum BuiltinFunction : uint {
     MathSin,
     MathCos,
     MathTan,
-    MathSinh,
-    MathCosh,
+    MathSinh, MathCosh,
     MathTanh,
     MathAsin,
     MathAcos,
