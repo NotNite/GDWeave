@@ -180,6 +180,8 @@ public static class ScriptTokenizer {
         "=",
     };
 
+    private static readonly List<string> BuiltinFunctions = Enum.GetNames<BuiltinFunction>().ToList();
+
     public static IEnumerable<Token> Tokenize(string gdScript, uint baseIndent = 0) {
         IEnumerable<string> tokens = SanitizeInput(TokenizeString(gdScript + " "));
 
@@ -212,6 +214,11 @@ public static class ScriptTokenizer {
             else if (previous == "_") {
                 idName += "_" + current;
                 goto end;
+            }
+
+            if (BuiltinFunctions.Contains(current)) {
+                toFlush.Add(new Token(TokenType.BuiltInFunc, (uint?)BuiltinFunctions.IndexOf(current)));
+                goto endAndFlushId;
             }
 
             if (Tokens.TryGetValue(current, out TokenType type)) {
