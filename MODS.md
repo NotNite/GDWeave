@@ -25,12 +25,100 @@ Create a manifest.json with the following keys:
 - `AssemblyPath` (optional): path to a C# assembly if one exists
 - `PackPath` (optional): path to a Godot .pck file if one exists
 - `Dependencies` (optional): list of other mod IDs that are required
+- `Metadata` (optional): object with information about your mod
+  - `Name`: a proper name for your mod
+  - `Author`: you!
+  - `Version`: mod version (keep in sync with your C# assembly, preferably)
+  - `Description`: a longer description about your mod
 
-For assets, GDWeave will load the specified pack file and execute `res://mods/<mod id>/main.gd`, where the mod ID is the ID specified in the manifest.
+Continue to the following sections for what you need to do:
 
-For script manipulation, GDWeave will load the specified assembly and create the first class that inherits `IMod`. The constructor can take an optional `IModInterface`. You can see a sample C# mod [here](https://github.com/NotNite/GDWeave.Sample).
+- [Adding new scripts or assets](#making-a-godot-project) (GDScript)
+- [Modifying existing game scripts](#writing-script-mods) (C#)
 
-C# modding is only required if you wish to patch existing scripts. Custom scripts and assets can be done purely in pack files. If working from a decompiled game project, specify include/exclude filters when exporting a .pck to only export the changed files and the `mods` directory.
+### Making a Godot project
+
+You can create a new project in the Godot editor (with the same version as your game) and export a .pck. GDWeave will load the script file `res://mods/ModID/main.gd` close to startup (see [technical info](#technical-info) for more information).
+
+After exporting the .pck file in your mod directory, set `PackPath` in the manifest:
+
+```json
+{
+  "Id": "ModId",
+  "PackPath": "ModId.pck"
+}
+```
+
+It is suggested to work in a separate project, but if you wish to work in a decompiled project, ensure that no game assets are exported in your .pck.
+
+### Writing script mods
+
+Script mods are written in C# using enumerators. Scripts run top-to-bottom, operating on each token of the script. If you are unfamiliar with C# enumerators, consider [reading the documentation](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/statements/yield) for how it works.
+
+A sample project is available [here](https://github.com/NotNite/GDWeave.Sample). After building the assembly, set `AssemblyPath` in the manifest:
+
+```json
+{
+  "Id": "ModId",
+  "AssemblyPath": "ModId.dll"
+}
+```
+
+You must register script mods through the mod interface:
+
+```cs
+modInterface.RegisterScriptMod(new MyScriptMod());
+```
+
+For example, if you wanted to wait until the newline after the `extends` keyword:
+
+```cs
+public class MyScriptMod : IScriptMod {
+    public bool ShouldRun(string path) => path == "res://path/to/script.gdc";
+
+    // returns a list of tokens for the new script, with the input being the original script's tokens
+    public IEnumerable<Token> Modify(string path, IEnumerable<Token> tokens) {
+        // wait for any newline token after any extends token
+        var waiter = new MultiTokenWaiter([
+            t => t.Type is TokenType.PrExtends,
+            t => t.Type is TokenType.Newline
+        ], allowPartialMatch: true);
+
+        // loop through all tokens in the script
+        foreach (var token in tokens) {
+            if (waiter.Check(token)) {
+                // found our match, return the original newline
+                yield return token;
+
+                // then add our own code
+                yield return new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunction.TextPrint);
+                yield return new Token(TokenType.ParenthesisOpen);
+                yield return new ConstantToken(new StringVariant("Hello, world!"));
+                yield return new Token(TokenType.ParenthesisClose);
+                yield return new Token(TokenType.Newline);
+            } else {
+                // return the original token
+                yield return token;
+            }
+        }
+    }
+}
+```
+
+`yield return` adds a new token to the result, so in this example we return all tokens but make sure to add our own code right below the newline after the `extends` keyword.
+
+There are several helper classes:
+
+- `TokenWaiter`/`MultiTokenWaiter`: wait for certain tokens to be passed through (e.g. adding extra code at a certain point in the script)
+- `TokenConsumer`: skips tokens until a certain token is found (e.g. removing the rest of a line)
+- `ScriptTokenizer`: turn arbitrary GDScript into a list of tokens (e.g. making it easier to write patches)
+  - This class is unstable and may have issues - please report any problems
+
+### Technical info
+
+- Pack files are loaded with an injected script in the first autoload. This is unstable and this behavior may change in the future.
+- Mods exist in `/root/ModID` with a `gdweave_mod` group.
+- For script mods, GDWeave will load the specified assembly and create the first class that inherits `IMod`. The constructor can take an optional `IModInterface`.
 
 ## Useful tools
 

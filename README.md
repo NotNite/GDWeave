@@ -6,7 +6,7 @@ GDWeave is an experimental runtime patching system for compiled GDScript bytecod
 
 Download [the latest release](https://github.com/NotNite/GDWeave/releases/latest/download/GDWeave.zip) and extract it to your game install. You should end up with a `GDWeave` folder and `winmm.dll` next to the game files.
 
-After GDWeave is installed, you can [install/create some mods](MODS.md)!
+After GDWeave is installed, you can [install/create some mods](https://github.com/NotNite/GDWeave/blob/main/MODS.md)!
 
 ## Troubleshooting/tips
 
