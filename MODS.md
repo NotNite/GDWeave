@@ -135,7 +135,7 @@ icon.png
 README.md
 ```
 
-See [here](https://thunderstore.io/c/webfishing/create/docs/) for the Thunderstore package docs. **Do not confuse the two manifests.**
+See [here](https://thunderstore.io/c/webfishing/create/docs/) for the Thunderstore package docs. **Do not confuse the two manifests.** Mark GDWeave as a dependency.
 
 ## Useful tools
 
