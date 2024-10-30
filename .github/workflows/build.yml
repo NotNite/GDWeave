@@ -21,8 +21,14 @@ jobs:
             - name: Build
               run: ./package.ps1
 
-            - name: Upload artifact
+            - name: Upload GDWeave
               uses: actions/upload-artifact@v3
               with:
                   name: GDWeave
                   path: ./local/GDWeave
+            - name: Upload Thunderstore package
+              uses: actions/upload-artifact@v3
+              with:
+                  name: thunderstore
+                  path: ./thunderstore
+

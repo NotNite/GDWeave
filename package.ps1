@@ -15,3 +15,16 @@ Write-Output "Copy your mods into this directory (make sure they're in separate 
 if (Test-Path ./local/GDWeave.zip) {
   Remove-Item ./local/GDWeave.zip
 }
+
+if (Test-Path ./thunderstore/GDWeave) {
+  Remove-Item ./thunderstore/GDWeave -Recurse
+}
+Copy-Item -Path ./local/GDWeave/GDWeave -Destination ./thunderstore/GDWeave -Recurse
+
+if (Test-Path ./thunderstore/winmm.dll) {
+  Remove-Item ./thunderstore/winmm.dll
+}
+Copy-Item -Path ./local/GDWeave/winmm.dll -Destination ./thunderstore/winmm.dll
+
+# thunderstore doesn't need the mods directory
+Remove-Item ./thunderstore/GDWeave/mods -Recurse
