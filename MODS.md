@@ -122,6 +122,14 @@ There are several helper classes:
 
 ## Useful tools
 
+### GDRETools
+
+You can use [GDRETools](https://github.com/bruvzg/gdsdecomp) to decompile the game into a usable project that can be opened in the Godot editor. The menu to decompile the game is in "RE Tools" > "Recover project", then select "Full Recovery".
+
+### GodotSteam
+
+[GodotSteam](https://godotsteam.com/) is a fork of Godot that adds Steamworks support. Most Godot games published on Steam use GodotSteam. If you are working with a game compiled with GodotSteam, use the GodotSteam editor for the appropriate engine version.
+
 ### Environment variables
 
 You can set multiple environment variables for debugging information:
