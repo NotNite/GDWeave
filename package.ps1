@@ -1,3 +1,8 @@
+$ErrorActionPreference = "Stop"
+
+dotnet build -c Release
+cargo build --release
+
 if (Test-Path ./local/GDWeave) {
   Remove-Item ./local/GDWeave -Recurse
 }
