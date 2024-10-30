@@ -16,6 +16,7 @@ if (Test-Path ./local/GDWeave.zip) {
   Remove-Item ./local/GDWeave.zip
 }
 
+# Thunderstore
 if (Test-Path ./thunderstore/GDWeave) {
   Remove-Item ./thunderstore/GDWeave -Recurse
 }
@@ -25,6 +26,8 @@ if (Test-Path ./thunderstore/winmm.dll) {
   Remove-Item ./thunderstore/winmm.dll
 }
 Copy-Item -Path ./local/GDWeave/winmm.dll -Destination ./thunderstore/winmm.dll
+
+Copy-Item -Path ./README.md -Destination ./thunderstore/README.md
 
 # thunderstore doesn't need the mods directory
 Remove-Item ./thunderstore/GDWeave/mods -Recurse
