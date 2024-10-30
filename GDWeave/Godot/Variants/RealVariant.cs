@@ -24,8 +24,11 @@ public class RealVariant : Variant {
     }
 
     public override bool Equals(Variant? other) {
-        const float tolerance = 0.01f;
-        return other is RealVariant variant && Math.Abs(this.Value - variant.Value) < tolerance;
+        // Comparing by floats is fine here since no arithmetic is done unless the user modifies it
+        // (in which case it's like 99% a different float)
+        // Even if we do mess this up, the only penalty is a slight increase in constant counts
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        return other is RealVariant variant && this.Value == variant.Value;
     }
 
     public override string ToString() {
