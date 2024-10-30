@@ -26,10 +26,15 @@ pub enum LoaderError {
 }
 
 fn init() -> Result<(), LoaderError> {
-    let dir = std::env::current_exe()?
-        .parent()
-        .ok_or(LoaderError::Unknown)?
-        .join("GDWeave");
+    let dir = std::env::var("GDWEAVE_FOLDER_OVERRIDE")
+        .map(|s| std::path::PathBuf::from(s))
+        .unwrap_or_else(|_| {
+            std::env::current_exe()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .join("GDWeave")
+        });
     let core = dir.join("core");
     let runtime_config_path = core.join("GDWeave.runtimeconfig.json");
     let dll_path = core.join("GDWeave.dll");

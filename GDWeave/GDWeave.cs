@@ -11,7 +11,7 @@ internal class GDWeave {
     public static readonly Assembly Assembly = Assembly.GetExecutingAssembly();
     public static readonly string Version = Assembly.GetName().Version!.ToString();
     public static string GameDir = null!;
-    public static string GDWeaveDir => Path.Combine(GameDir, "GDWeave");
+    public static string GDWeaveDir = null!;
 
     public static ILogger Logger = null!;
     public static ModLoader ModLoader = null!;
@@ -42,6 +42,7 @@ internal class GDWeave {
         ConsoleFixer.Init();
 
         GameDir = Path.GetDirectoryName(Environment.ProcessPath!)!;
+        GDWeaveDir = Environment.GetEnvironmentVariable("GDWEAVE_FOLDER_OVERRIDE") ?? Path.Combine(GameDir, "GDWeave");
 
         var logPath = Path.Combine(GDWeaveDir, "GDWeave.log");
         if (File.Exists(logPath)) File.Delete(logPath);
