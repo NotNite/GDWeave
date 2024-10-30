@@ -120,6 +120,23 @@ There are several helper classes:
 - Mods exist in `/root/ModID` with a `gdweave_mod` group.
 - For script mods, GDWeave will load the specified assembly and create the first class that inherits `IMod`. The constructor can take an optional `IModInterface`.
 
+## Publishing to Thunderstore
+
+GDWeave [is on Thunderstore](https://thunderstore.io/c/webfishing/p/NotNet/GDWeave/). Your .zip should look like:
+
+```text
+GDWeave/
+  mods/
+    <mod ID>/
+      manifest.json # GDWeave manifest
+      <mod files>
+manifest.json       # Thunderstore manifest
+icon.png
+README.md
+```
+
+See [here](https://thunderstore.io/c/webfishing/create/docs/) for the Thunderstore package docs. **Do not confuse the two manifests.**
+
 ## Useful tools
 
 ### GDRETools
