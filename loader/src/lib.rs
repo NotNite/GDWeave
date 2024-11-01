@@ -26,6 +26,18 @@ pub enum LoaderError {
 }
 
 fn init() -> Result<(), LoaderError> {
+    let args = std::env::args().collect::<Vec<_>>();
+    if args.iter().any(|s| s == "--gdweave-disable") {
+        return Ok(());
+    }
+    if let Some(i) = args
+        .iter()
+        .position(|s| s.starts_with("--gdweave-folder-override="))
+    {
+        let path = args[i].split('=').nth(1).unwrap();
+        std::env::set_var("GDWEAVE_FOLDER_OVERRIDE", path);
+    }
+
     let dir = std::env::var("GDWEAVE_FOLDER_OVERRIDE")
         .map(|s| std::path::PathBuf::from(s))
         .unwrap_or_else(|_| {
