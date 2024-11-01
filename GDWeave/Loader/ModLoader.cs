@@ -51,6 +51,16 @@ internal class ModLoader {
                                    : null
                 };
 
+                if (loadedMod.AssemblyPath != null && !File.Exists(loadedMod.AssemblyPath)) {
+                    this.logger.Warning("Assembly at {AssemblyPath} does not exist", loadedMod.AssemblyPath);
+                    continue;
+                }
+
+                if (loadedMod.PackPath != null && !File.Exists(loadedMod.PackPath)) {
+                    this.logger.Warning("Pack file at {PackPath} does not exist", loadedMod.PackPath);
+                    continue;
+                }
+
                 this.LoadedMods.Add(loadedMod);
             } catch (Exception e) {
                 this.logger.Warning(e, "Failed to load mod at {ModDir}", modDir);
@@ -97,6 +107,8 @@ internal class ModLoader {
     }
 
     private void LoadAssemblies() {
+        var invalidMods = new List<LoadedMod>();
+
         foreach (var loadedMod in this.LoadedMods) {
             if (loadedMod.AssemblyPath is not { } assemblyPath) continue;
 
@@ -107,7 +119,12 @@ internal class ModLoader {
                 loadedMod.AssemblyMod = assemblyMod;
             } catch (Exception e) {
                 this.logger.Warning(e, "Failed to load assembly for mod {ModId}", loadedMod.Manifest.Id);
+                invalidMods.Add(loadedMod);
             }
+        }
+
+        foreach (var invalidMod in invalidMods) {
+            this.LoadedMods.Remove(invalidMod);
         }
     }
 
