@@ -114,6 +114,13 @@ There are several helper classes:
 - `ScriptTokenizer`: turn arbitrary GDScript into a list of tokens (e.g. making it easier to write patches)
   - This class is unstable and may have issues - please report any problems
 
+### Useful token information
+
+- Tokens contain "associated data" which is a 32-bit integer.
+- `Identifier` and `Constant` tokens will be converted into the higher-level `IdentifierToken` and `ConstantToken` classes. The associated data for these tokens resolve to entries in a table, and GDWeave can automatically convert to and from for you, as well as adding new entries to the respective tables.
+- `Newline` tokens have associated data for the given indent level.
+- `BuiltInType` and `BuiltInFunc` tokens contain the enums `VariantType` and `BuiltinFunction` respectively. You can cast these enums to a `uint?` to use them in the token constructor.
+
 ### Technical info
 
 - Pack files are loaded with an injected script in the first autoload. This is unstable and this behavior may change in the future.
@@ -136,6 +143,8 @@ README.md
 ```
 
 See [here](https://thunderstore.io/c/webfishing/create/docs/) for the Thunderstore package docs. **Do not confuse the two manifests.** Mark GDWeave as a dependency.
+
+You can use [manifestation](https://github.com/NotNite/manifestation) to make publishing easier.
 
 ## Useful tools
 
