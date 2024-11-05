@@ -32,7 +32,6 @@ public static class ScriptTokenizer {
 
         {"void", TokenType.PrVoid},
         {"enum", TokenType.PrEnum},
-
         {"preload", TokenType.PrPreload},
         {"assert", TokenType.PrAssert},
 
@@ -182,83 +181,149 @@ public static class ScriptTokenizer {
 
     private static readonly List<string> BuiltinFunctions = Enum.GetNames<BuiltinFunction>().ToList();
 
+    private static void InsertNewLine(IEnumerator<string> enumerator, uint baseIndent, List<Token> toFlush) {
+        if (!enumerator.MoveNext()) {
+            return;
+        }
+
+        var tabCount = uint.Parse(enumerator.Current);
+        toFlush.Add(new Token(TokenType.Newline, tabCount + baseIndent));
+    }
+
+    private static void BuildIdentifierName(IEnumerator<string> enumerator, List<Token> toFlush, out string? found) {
+        found = string.Empty;
+        if (!enumerator.MoveNext()) {
+            return;
+        }
+
+        if (enumerator.Current == ":") {
+            toFlush.Add(new Token(TokenType.Wildcard));
+            toFlush.Add(new Token(TokenType.Semicolon));
+            return;
+        }
+
+        found = "_" + enumerator.Current;
+    }
+
+    private static void BuildNumber(IEnumerator<string> enumerator, List<Token> toFlush) {
+        int sign = 1;
+
+        if (enumerator.Current == "-") {
+            sign = -1;
+            if (!enumerator.MoveNext()) return;
+        }
+
+        if (!long.TryParse(enumerator.Current, out long upper)) {
+            toFlush.Add(new Token(TokenType.OpSub));
+            return;
+        }
+
+        if (!enumerator.MoveNext()) return;
+
+        if (enumerator.Current != ".") {
+            toFlush.Add(new ConstantToken(new IntVariant(upper * sign)));
+            return;
+        }
+
+        if (!enumerator.MoveNext()) return;
+
+        if (!long.TryParse(enumerator.Current, out long lower)) {
+            // I dont think there is really a proper return for here.
+            // You'd have a number that looks like this "1000."
+            // No following decimal
+            // Comment if you had ideas
+            return;
+        }
+
+        var result = upper + (lower / Math.Pow(10, lower.ToString().Length));
+        toFlush.Add(new ConstantToken(new RealVariant(result * sign)));
+    }
+
     public static IEnumerable<Token> Tokenize(string gdScript, uint baseIndent = 0) {
+        var finalTokens = new List<Token>();
         var tokens = SanitizeInput(TokenizeString(gdScript + " "));
 
         var previous = string.Empty;
         var idName = string.Empty;
 
-        List<Token> toFlush = new(2);
-        yield return new Token(TokenType.Newline, baseIndent);
-        foreach (var current in tokens) {
+        var toFlush = new List<Token>(2);
+        finalTokens.Add(new Token(TokenType.Newline, baseIndent));
+        var enumerator = tokens.GetEnumerator();
+        while (enumerator.MoveNext()) {
+            var current = enumerator.Current;
             if (current == "\n") {
-                goto endAndFlushId;
-            }
-
-            if (previous == "\n") {
-                var tabCount = uint.Parse(current);
-                toFlush.Add(new Token(TokenType.Newline, tabCount + baseIndent));
-                goto end;
+                InsertNewLine(enumerator, baseIndent, toFlush);
+                endAndFlushId();
+                continue;
             }
 
             if (current == "_") {
-                goto end;
+                BuildIdentifierName(enumerator, toFlush, out string? found);
+                if (found == string.Empty) {
+                    endAndFlushId();
+                    continue;
+                }
+
+                idName += found;
+
+                end();
+                continue;
             }
 
-            if (previous == "_" && current == ":") {
-                toFlush.Add(new Token(TokenType.Wildcard));
-                toFlush.Add(new Token(TokenType.Semicolon));
-                goto endAndFlushId;
-            } else if (previous == "_") {
-                idName += "_" + current;
-                goto end;
+            if (current == "-" || char.IsDigit(current[0])) {
+                BuildNumber(enumerator, toFlush);
+                endAndFlushId();
+                continue;
             }
 
             if (BuiltinFunctions.Contains(current)) {
                 toFlush.Add(new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunctions.IndexOf(current)));
-                goto endAndFlushId;
+                endAndFlushId();
+                continue;
             }
 
             if (Tokens.TryGetValue(current, out var type)) {
                 toFlush.Add(new Token(type));
-                goto endAndFlushId;
+                endAndFlushId();
+                continue;
             }
 
-            if (current[0] == '"') {
+            if (current.StartsWith('"')) {
                 toFlush.Add(new ConstantToken(new StringVariant(current.Substring(1, current.Length - 2))));
-                goto endAndFlushId;
+                endAndFlushId();
+                continue;
             }
 
             if (bool.TryParse(current, out var resultB)) {
                 toFlush.Add(new ConstantToken(new BoolVariant(resultB)));
-                goto endAndFlushId;
-            }
-
-            if (long.TryParse(current, out var resultL)) {
-                toFlush.Add(new ConstantToken(new IntVariant(resultL)));
-                goto endAndFlushId;
-            }
-
-            if (double.TryParse(current, out var result)) {
-                toFlush.Add(new ConstantToken(new RealVariant(result)));
-                goto endAndFlushId;
+                endAndFlushId();
+                continue;
             }
 
             idName += current;
 
-            goto end;
-            endAndFlushId:
-            if (idName != string.Empty) {
-                yield return new IdentifierToken(idName);
-                idName = string.Empty;
+            end();
+
+            void end() {
+                previous = enumerator.Current;
+                finalTokens.AddRange(toFlush);
+                toFlush.Clear();
             }
-            end:
-            previous = current;
-            foreach (var token in toFlush) yield return token;
-            toFlush.Clear();
+
+            void endAndFlushId() {
+                if (idName != string.Empty) {
+                    finalTokens.Add(new IdentifierToken(idName));
+                    idName = string.Empty;
+                }
+
+                end();
+            }
         }
 
-        yield return new(TokenType.Newline, baseIndent);
+        finalTokens.Add(new(TokenType.Newline, baseIndent));
+
+        foreach (var t in finalTokens) yield return t;
+
     }
 
     private static IEnumerable<string> SanitizeInput(IEnumerable<string> tokens) {
