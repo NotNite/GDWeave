@@ -12,10 +12,12 @@ After GDWeave is installed, you can [install/create some mods](https://github.co
 
 ## Troubleshooting/tips
 
-- Do not download GDWeave from the "Code" button on the GitHub page.
+- Do not download GDWeave from the "Code" button on the GitHub page. Download it through [GitHub](https://github.com/NotNite/GDWeave/releases/latest/download/GDWeave.zip) or [Thunderstore](https://thunderstore.io/c/webfishing/p/NotNet/GDWeave/).
 - You can open the folder the game is installed into with Steam - right click > "Manage" > "Browse local files".
-- You may need to install [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/8.0) manually, if the installer from GDWeave doesn't work. Pick the SDK for Windows x64.
-- Linux users will need to set `WINEDLLOVERRIDES="winmm=n,b" %command%` in their Steam launch arguments.
+- You may need to install [.NET 8](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.403-windows-x64-installer) manually, if the installer from GDWeave doesn't work.
+- You may also need to install [Microsoft Visual C++ 2015-2022 Redistributables](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+- Users of Proton / Steam Play (i.e. those who are on a Steam Deck, a Chromebook, or are otherwise running Steam for Linux) will need to set their Steam launch arguments to `WINEDLLOVERRIDES="winmm=n,b" %command%`.
+- If you're using Wine or Proton, and nothing appears when you attempt to start a game with GDWeave, try downloading [this .gz file](https://github.com/binarylandia/wine_bcryptprimitives_dll_mock/releases/download/2024-11-04_16-27-34/bcryptprimitives.dll-2024-11-04_16-27-34.gz), extracting it, renaming the resulting .dll file to `bcryptprimitives.dll`, and then placing it next to the game files.
 
 ## Supported versions
 
