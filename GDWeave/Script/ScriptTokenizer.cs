@@ -30,7 +30,8 @@ public static class ScriptTokenizer {
         {"setget", TokenType.PrSetget},
         {"static", TokenType.PrStatic},
 
-        {"void", TokenType.PrVoid}, {"enum", TokenType.PrEnum},
+        {"void", TokenType.PrVoid},
+        {"enum", TokenType.PrEnum},
         {"preload", TokenType.PrPreload},
         {"assert", TokenType.PrAssert},
 
