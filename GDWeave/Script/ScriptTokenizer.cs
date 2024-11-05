@@ -139,7 +139,7 @@ public static class ScriptTokenizer {
         "*=",
         "/=",
         "%=",
-        "&=",
+       "&=",
         "|=",
         "^=",
 
@@ -205,7 +205,8 @@ public static class ScriptTokenizer {
         found = "_" + enumerator.Current;
     }
 
-    private static void BuildNumber(IEnumerator<string> enumerator, List<Token> toFlush) {
+    private static void BuildNumber(IEnumerator<string> enumerator, List<Token> toFlush, out bool foundFull) {
+        foundFull = true;
         int sign = 1;
 
         if (enumerator.Current == "-") {
@@ -215,6 +216,7 @@ public static class ScriptTokenizer {
 
         if (!long.TryParse(enumerator.Current, out long upper)) {
             toFlush.Add(new Token(TokenType.OpSub));
+            foundFull = false;
             return;
         }
 
@@ -222,6 +224,7 @@ public static class ScriptTokenizer {
 
         if (enumerator.Current != ".") {
             toFlush.Add(new ConstantToken(new IntVariant(upper * sign)));
+            foundFull = false;
             return;
         }
 
@@ -250,14 +253,13 @@ public static class ScriptTokenizer {
         finalTokens.Add(new Token(TokenType.Newline, baseIndent));
         var enumerator = tokens.GetEnumerator();
         while (enumerator.MoveNext()) {
-            var current = enumerator.Current;
-            if (current == "\n") {
+            if (enumerator.Current == "\n") {
                 InsertNewLine(enumerator, baseIndent, toFlush);
                 endAndFlushId();
                 continue;
             }
 
-            if (current == "_") {
+            if (enumerator.Current == "_") {
                 BuildIdentifierName(enumerator, toFlush, out string? found);
                 if (found == string.Empty) {
                     endAndFlushId();
@@ -270,37 +272,40 @@ public static class ScriptTokenizer {
                 continue;
             }
 
-            if (current == "-" || char.IsDigit(current[0])) {
-                BuildNumber(enumerator, toFlush);
+            if (enumerator.Current == "-" || char.IsDigit(enumerator.Current[0])) {
+                BuildNumber(enumerator, toFlush, out bool foundFull);
+                endAndFlushId();
+                if (foundFull) {
+                    continue;
+                }
+            }
+
+            if (BuiltinFunctions.Contains(enumerator.Current)) {
+                toFlush.Add(new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunctions.IndexOf(enumerator.Current)));
                 endAndFlushId();
                 continue;
             }
 
-            if (BuiltinFunctions.Contains(current)) {
-                toFlush.Add(new Token(TokenType.BuiltInFunc, (uint?) BuiltinFunctions.IndexOf(current)));
-                endAndFlushId();
-                continue;
-            }
-
-            if (Tokens.TryGetValue(current, out var type)) {
+            if (Tokens.TryGetValue(enumerator.Current, out var type)) {
                 toFlush.Add(new Token(type));
                 endAndFlushId();
                 continue;
             }
 
-            if (current.StartsWith('"')) {
+            if (enumerator.Current.StartsWith('"')) {
+                var current = enumerator.Current;
                 toFlush.Add(new ConstantToken(new StringVariant(current.Substring(1, current.Length - 2))));
                 endAndFlushId();
                 continue;
             }
 
-            if (bool.TryParse(current, out var resultB)) {
+            if (bool.TryParse(enumerator.Current, out var resultB)) {
                 toFlush.Add(new ConstantToken(new BoolVariant(resultB)));
                 endAndFlushId();
                 continue;
             }
 
-            idName += current;
+            idName += enumerator.Current;
 
             end();
 
@@ -323,7 +328,6 @@ public static class ScriptTokenizer {
         finalTokens.Add(new(TokenType.Newline, baseIndent));
 
         foreach (var t in finalTokens) yield return t;
-
     }
 
     private static IEnumerable<string> SanitizeInput(IEnumerable<string> tokens) {
