@@ -6,7 +6,7 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             var tabs = 0u;
             var gen = this.GenerateToken(token, ref tabs);
 
-            writer.Write(gen);
+            writer.Write(gen + ' ');
 
             for (var i = 0; i < tabs; i++) {
                 writer.Write('\t');
