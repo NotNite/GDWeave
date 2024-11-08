@@ -100,7 +100,7 @@ public static class ScriptTokenizer {
         {"|=", TokenType.OpAssignBitOr},
         {"^=", TokenType.OpAssignBitXor},
 
-        {"+", TokenType.OpAnd},
+        {"+", TokenType.OpAdd},
         {"-", TokenType.OpSub},
         {"*", TokenType.OpMul},
         {"/", TokenType.OpDiv},
@@ -252,7 +252,10 @@ public static class ScriptTokenizer {
         var toFlush = new List<Token>(2);
         finalTokens.Add(new Token(TokenType.Newline, baseIndent));
         var enumerator = tokens.GetEnumerator();
-        while (enumerator.MoveNext()) {
+        var reparse = false;
+        while (reparse ? true : enumerator.MoveNext()) {
+            reparse = false;
+
             if (enumerator.Current == "\n") {
                 InsertNewLine(enumerator, baseIndent, toFlush);
                 endAndFlushId();
@@ -274,10 +277,9 @@ public static class ScriptTokenizer {
 
             if (enumerator.Current == "-" || char.IsDigit(enumerator.Current[0])) {
                 BuildNumber(enumerator, toFlush, out bool foundFull);
+                reparse = !foundFull;
                 endAndFlushId();
-                if (foundFull) {
-                    continue;
-                }
+                continue;
             }
 
             if (BuiltinFunctions.Contains(enumerator.Current)) {
