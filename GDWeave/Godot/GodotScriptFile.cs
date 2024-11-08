@@ -8,6 +8,7 @@ public class GodotScriptFile {
     public const uint Magic = 0x43534447;   // 'G', 'D', 'S', 'C'
     public const uint Version = 13;         // Godot 3.5.2
     public const byte UselessXorKey = 0xB6; // What
+    public const uint TokenLineMask = (1 << 24) - 1;
 
     public List<string> Identifiers = new();
     public List<Variant> Constants = new();

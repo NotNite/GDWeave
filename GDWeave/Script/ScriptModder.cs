@@ -22,6 +22,7 @@ public class ScriptModder(List<IScriptMod>? mods = null) {
 
         // Translate special tokens back into tokens
         file.Tokens.Clear();
+        file.Lines.Clear();
         foreach (var token in tokens) {
             switch (token) {
                 case ConstantToken constant: {
@@ -48,6 +49,8 @@ public class ScriptModder(List<IScriptMod>? mods = null) {
             }
 
             file.Tokens.Add(token);
+            var idx = (uint) file.Tokens.Count - 1;
+            file.Lines.Add((idx, idx & GodotScriptFile.TokenLineMask));
         }
 
         return true;
