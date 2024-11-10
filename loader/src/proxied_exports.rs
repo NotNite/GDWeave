@@ -18,10 +18,6 @@ pub extern "C" fn DriverCallback() {}
 pub extern "C" fn DrvGetModuleHandle() {}
 
 #[forward]
-#[export_name = "GetDriverModuleHandle"]
-pub extern "C" fn GetDriverModuleHandle() {}
-
-#[forward]
 #[export_name = "NotifyCallbackData"]
 pub extern "C" fn NotifyCallbackData() {}
 
@@ -142,24 +138,12 @@ pub extern "C" fn mciDriverYield() {}
 pub extern "C" fn mciExecute() {}
 
 #[forward]
-#[export_name = "mciFreeCommandResource"]
-pub extern "C" fn mciFreeCommandResource() {}
-
-#[forward]
 #[export_name = "mciGetCreatorTask"]
 pub extern "C" fn mciGetCreatorTask() {}
 
 #[forward]
 #[export_name = "mciGetDeviceIDA"]
 pub extern "C" fn mciGetDeviceIDA() {}
-
-#[forward]
-#[export_name = "mciGetDeviceIDFromElementIDA"]
-pub extern "C" fn mciGetDeviceIDFromElementIDA() {}
-
-#[forward]
-#[export_name = "mciGetDeviceIDFromElementIDW"]
-pub extern "C" fn mciGetDeviceIDFromElementIDW() {}
 
 #[forward]
 #[export_name = "mciGetDeviceIDW"]
@@ -180,10 +164,6 @@ pub extern "C" fn mciGetErrorStringW() {}
 #[forward]
 #[export_name = "mciGetYieldProc"]
 pub extern "C" fn mciGetYieldProc() {}
-
-#[forward]
-#[export_name = "mciLoadCommandResource"]
-pub extern "C" fn mciLoadCommandResource() {}
 
 #[forward]
 #[export_name = "mciSendCommandA"]
@@ -278,14 +258,6 @@ pub extern "C" fn midiInStart() {}
 pub extern "C" fn midiInStop() {}
 
 #[forward]
-#[export_name = "midiInUnprepareHeader"]
-pub extern "C" fn midiInUnprepareHeader() {}
-
-#[forward]
-#[export_name = "midiOutCacheDrumPatches"]
-pub extern "C" fn midiOutCacheDrumPatches() {}
-
-#[forward]
 #[export_name = "midiOutCachePatches"]
 pub extern "C" fn midiOutCachePatches() {}
 
@@ -300,14 +272,6 @@ pub extern "C" fn midiOutGetDevCapsA() {}
 #[forward]
 #[export_name = "midiOutGetDevCapsW"]
 pub extern "C" fn midiOutGetDevCapsW() {}
-
-#[forward]
-#[export_name = "midiOutGetErrorTextA"]
-pub extern "C" fn midiOutGetErrorTextA() {}
-
-#[forward]
-#[export_name = "midiOutGetErrorTextW"]
-pub extern "C" fn midiOutGetErrorTextW() {}
 
 #[forward]
 #[export_name = "midiOutGetID"]
@@ -334,10 +298,6 @@ pub extern "C" fn midiOutMessage() {}
 pub extern "C" fn midiOutOpen() {}
 
 #[forward]
-#[export_name = "midiOutPrepareHeader"]
-pub extern "C" fn midiOutPrepareHeader() {}
-
-#[forward]
 #[export_name = "midiOutReset"]
 pub extern "C" fn midiOutReset() {}
 
@@ -348,10 +308,6 @@ pub extern "C" fn midiOutSetVolume() {}
 #[forward]
 #[export_name = "midiOutShortMsg"]
 pub extern "C" fn midiOutShortMsg() {}
-
-#[forward]
-#[export_name = "midiOutUnprepareHeader"]
-pub extern "C" fn midiOutUnprepareHeader() {}
 
 #[forward]
 #[export_name = "midiStreamClose"]
@@ -390,14 +346,6 @@ pub extern "C" fn midiStreamStop() {}
 pub extern "C" fn mixerClose() {}
 
 #[forward]
-#[export_name = "mixerGetControlDetailsA"]
-pub extern "C" fn mixerGetControlDetailsA() {}
-
-#[forward]
-#[export_name = "mixerGetControlDetailsW"]
-pub extern "C" fn mixerGetControlDetailsW() {}
-
-#[forward]
 #[export_name = "mixerGetDevCapsA"]
 pub extern "C" fn mixerGetDevCapsA() {}
 
@@ -408,14 +356,6 @@ pub extern "C" fn mixerGetDevCapsW() {}
 #[forward]
 #[export_name = "mixerGetID"]
 pub extern "C" fn mixerGetID() {}
-
-#[forward]
-#[export_name = "mixerGetLineControlsA"]
-pub extern "C" fn mixerGetLineControlsA() {}
-
-#[forward]
-#[export_name = "mixerGetLineControlsW"]
-pub extern "C" fn mixerGetLineControlsW() {}
 
 #[forward]
 #[export_name = "mixerGetLineInfoA"]
@@ -436,10 +376,6 @@ pub extern "C" fn mixerMessage() {}
 #[forward]
 #[export_name = "mixerOpen"]
 pub extern "C" fn mixerOpen() {}
-
-#[forward]
-#[export_name = "mixerSetControlDetails"]
-pub extern "C" fn mixerSetControlDetails() {}
 
 #[forward]
 #[export_name = "mmDrvInstall"]
@@ -658,10 +594,6 @@ pub extern "C" fn waveInStart() {}
 pub extern "C" fn waveInStop() {}
 
 #[forward]
-#[export_name = "waveInUnprepareHeader"]
-pub extern "C" fn waveInUnprepareHeader() {}
-
-#[forward]
 #[export_name = "waveOutBreakLoop"]
 pub extern "C" fn waveOutBreakLoop() {}
 
@@ -678,14 +610,6 @@ pub extern "C" fn waveOutGetDevCapsA() {}
 pub extern "C" fn waveOutGetDevCapsW() {}
 
 #[forward]
-#[export_name = "waveOutGetErrorTextA"]
-pub extern "C" fn waveOutGetErrorTextA() {}
-
-#[forward]
-#[export_name = "waveOutGetErrorTextW"]
-pub extern "C" fn waveOutGetErrorTextW() {}
-
-#[forward]
 #[export_name = "waveOutGetID"]
 pub extern "C" fn waveOutGetID() {}
 
@@ -696,10 +620,6 @@ pub extern "C" fn waveOutGetNumDevs() {}
 #[forward]
 #[export_name = "waveOutGetPitch"]
 pub extern "C" fn waveOutGetPitch() {}
-
-#[forward]
-#[export_name = "waveOutGetPlaybackRate"]
-pub extern "C" fn waveOutGetPlaybackRate() {}
 
 #[forward]
 #[export_name = "waveOutGetPosition"]
@@ -722,10 +642,6 @@ pub extern "C" fn waveOutOpen() {}
 pub extern "C" fn waveOutPause() {}
 
 #[forward]
-#[export_name = "waveOutPrepareHeader"]
-pub extern "C" fn waveOutPrepareHeader() {}
-
-#[forward]
 #[export_name = "waveOutReset"]
 pub extern "C" fn waveOutReset() {}
 
@@ -738,16 +654,8 @@ pub extern "C" fn waveOutRestart() {}
 pub extern "C" fn waveOutSetPitch() {}
 
 #[forward]
-#[export_name = "waveOutSetPlaybackRate"]
-pub extern "C" fn waveOutSetPlaybackRate() {}
-
-#[forward]
 #[export_name = "waveOutSetVolume"]
 pub extern "C" fn waveOutSetVolume() {}
-
-#[forward]
-#[export_name = "waveOutUnprepareHeader"]
-pub extern "C" fn waveOutUnprepareHeader() {}
 
 #[forward]
 #[export_name = "waveOutWrite"]
