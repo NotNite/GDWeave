@@ -1,3 +1,6 @@
 [workspace]
 resolver = "2"
 members = ["loader"]
+
+[patch.crates-io]
+proxygen-macros = { path = "proxygen-macros" }

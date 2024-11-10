@@ -2,14 +2,29 @@
 name = "loader"
 version = "0.1.0"
 edition = "2021"
+# build = "build.rs"
 
-[lib]
-crate-type = ["cdylib"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.89"
+proxygen-macros = "0.5.1"
+libc = "0.2.149"
+winapi = { version = "0.3.9", features = [
+    "minwindef",
+    "libloaderapi",
+    "processthreadsapi",
+    "consoleapi",
+    "processenv",
+    "winbase",
+    "winuser",
+    "errhandlingapi",
+] }
+thiserror = "1.0.64"
 isahc = "1.7.2"
 netcorehost = "0.17.0"
-proxy-dll = "0.2.5"
-thiserror = "1.0.64"
+anyhow = "1.0.89"
 win-msgbox = "0.2.1"
+
+[lib]
+name = "winmm"
+crate-type = ["cdylib"]
