@@ -1,8 +1,17 @@
 use isahc::ReadResponseExt;
 use netcorehost::{error::HostingError, nethost, pdcstr, pdcstring::PdCString};
 use proxy_dll::proxy;
+use retour::static_detour;
 use thiserror::Error;
 use win_msgbox::{Okay, YesNo};
+use windows::{
+    core::PCWSTR,
+    Win32::System::{
+        LibraryLoader::GetModuleHandleW,
+        ProcessStatus::{GetModuleInformation, MODULEINFO},
+        Threading::GetCurrentProcess,
+    },
+};
 
 #[derive(Error, Debug)]
 pub enum LoaderError {
@@ -89,8 +98,11 @@ fn install_net() -> anyhow::Result<()> {
     Ok(())
 }
 
-#[proxy]
-pub fn main() {
+static_detour! {
+  static MainHook: fn() -> i32;
+}
+
+pub fn main_detour() -> i32 {
     if let Err(e) = init() {
         match e {
             LoaderError::LoadHostfxrError(_)
@@ -122,5 +134,30 @@ pub fn main() {
                     .ok();
             }
         }
+    }
+
+    MainHook.call()
+}
+
+#[proxy]
+pub fn main() {
+    unsafe {
+        let process = GetCurrentProcess();
+        let module = GetModuleHandleW(PCWSTR::null()).unwrap();
+        let mut lpmodinfo = MODULEINFO::default();
+        GetModuleInformation(
+            process,
+            module,
+            &mut lpmodinfo,
+            size_of::<MODULEINFO>() as u32,
+        )
+        .unwrap();
+
+        let entry = lpmodinfo.EntryPoint;
+
+        MainHook
+            .initialize(std::mem::transmute(entry), main_detour)
+            .unwrap();
+        MainHook.enable().unwrap();
     }
 }
