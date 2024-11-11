@@ -1,6 +1,6 @@
 # GDWeave
 
-GDWeave is a mod loader & runtime script patching for [the Godot Engine](https://github.com/godotengine/godot).
+GDWeave is a mod loader & runtime script patcher for [the Godot Engine](https://github.com/godotengine/godot).
 
 ## Installation
 
