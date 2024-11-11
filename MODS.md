@@ -156,7 +156,7 @@ You can use [GDRETools](https://github.com/bruvzg/gdsdecomp) to decompile the ga
 
 [GodotSteam](https://godotsteam.com/) is a fork of Godot that adds Steamworks support. Most Godot games published on Steam use GodotSteam. If you are working with a game compiled with GodotSteam, use the GodotSteam editor for the appropriate engine version.
 
-### Environment variables
+### Environment Variables
 
 You can set multiple environment variables for debugging information:
 
@@ -164,8 +164,16 @@ You can set multiple environment variables for debugging information:
 - `GDWEAVE_CONSOLE` opens a console window.
   - You can also start the game from the command line, but this console includes GDWeave output.
 - `GDWEAVE_DUMP_GDSC` will output game scripts to a `gdc` folder in the game install. You can [disassemble these scripts](#disassembling-scripts).
+- `GDWEAVE_FOLDER_OVERRIDE` overrides the default GDWeave folder location.
+  - By default, GDWeave loads from `<game_directory>/GDWeave`
+  - Set this to change where GDWeave looks for its files
+  - Example: `GDWEAVE_FOLDER_OVERRIDE=C:\CustomPath\GDWeave`
 
-Set these environment variables to any value (e.g. `GDWEAVE_DEBUG=1`) to enable them.
+To enable these options, excluding `GDWEAVE_FOLDER_OVERRIDE`, set the environment variable to any value (e.g. `GDWEAVE_DEBUG=1`).
+
+### Launch Arguments
+
+- `--gdweave-disable` will completely disable GDWeave.
 
 ### Disassembling scripts
 
