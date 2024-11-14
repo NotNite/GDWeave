@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices.JavaScript;
-
-namespace GDWeave;
+﻿namespace GDWeave;
 
 internal class ModManifest {
     public required string Id { get; set; }
