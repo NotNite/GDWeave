@@ -29,12 +29,8 @@ internal class ModManifest {
         public float? Maximum { get; set; }
         public float? MultipleOf { get; set; }
         public Dictionary<string, ModConfigProperty>? Properties { get; set; }
-        public ArrayItems? Items { get; set; }
+        public ModConfigProperty? Items { get; set; }
         public int? MinItems { get; set; }
         public int? MaxItems { get; set; }
-    }
-
-    internal class ArrayItems {
-        public string? Type { get; set; }
     }
 }
