@@ -66,7 +66,7 @@ public static class ScriptTokenizer {
         {"[", TokenType.BracketOpen},
         {"]", TokenType.BracketClose},
         {"{", TokenType.CurlyBracketOpen},
-        {"}", TokenType.CurlyBracketOpen},
+        {"}", TokenType.CurlyBracketClose},
 
         {"(", TokenType.ParenthesisOpen},
         {")", TokenType.ParenthesisClose},
