@@ -366,10 +366,10 @@ public static class ScriptTokenizer {
                     yield return ClearBuilder();
                     var start = i;
                     i++;
-                    for (; i < text.Length && text[i] == ' '; i++) ;
+                    for (; i < text.Length && text[i] == '\t'; i++) ;
                     i--;
                     yield return "\n";
-                    yield return $"{(i - start) / 4}";
+                    yield return $"{i - start}";
                     continue;
                 }
             }
