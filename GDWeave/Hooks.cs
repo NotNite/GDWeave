@@ -16,12 +16,6 @@ internal unsafe class Hooks {
     // GDScriptTokenizerBuffer::set_code_buffer
     private delegate nint SetCodeBufferDelegate(nint tokenizerBuffer, GodotVector* codeBuffer);
 
-    private delegate nint SetUnhandledExceptionFilterDelegate(nint filter);
-    private delegate nint UnhandledExceptionFilterDelegate(ExceptionPointersStruct* exceptionInfo);
-
-    private ITrackedHook<SetUnhandledExceptionFilterDelegate> setUnhandledExceptionFilterHook;
-    private UnhandledExceptionFilterDelegate unhandledExceptionFilter;
-
     private ITrackedHook<LoadByteCodeDelegate> loadByteCodeHook;
     private ITrackedHook<SetCodeBufferDelegate> setCodeBufferHook;
 
@@ -39,14 +33,9 @@ internal unsafe class Hooks {
     public Hooks(ScriptModder modder, Interop interop) {
         this.modder = modder;
 
-        // We can't set an exception filter directly as the game overrides it, so we need to hook SetUnhandledExceptionFilter
-        var kernel32 = LoadLibrary("kernel32.dll");
-        var setUnhandledExceptionFilter = GetProcAddress(kernel32, "SetUnhandledExceptionFilter");
-        this.unhandledExceptionFilter = this.UnhandledExceptionFilter;
-        this.setUnhandledExceptionFilterHook = interop.CreateHook<SetUnhandledExceptionFilterDelegate>(
-            setUnhandledExceptionFilter,
-            this.SetUnhandledExceptionFilterDetour);
-        this.setUnhandledExceptionFilterHook.Enable();
+        // Doing this because we wouldn't get the full stack trace from .NET with the kernel32 unhandledExceptionFilter.
+        AppDomain.CurrentDomain.UnhandledException += this.UnhandledException;
+        TaskScheduler.UnobservedTaskException += this.UnhandledException;
 
         var patterns = new Dictionary<PatternType, string[]> {
             [PatternType.LoadByteCode] = [
@@ -74,15 +63,14 @@ internal unsafe class Hooks {
         this.setCodeBufferHook.Enable();
     }
 
-    private nint SetUnhandledExceptionFilterDetour(nint filter) {
-        return this.setUnhandledExceptionFilterHook.Original(
-            Marshal.GetFunctionPointerForDelegate(this.unhandledExceptionFilter));
+    private void UnhandledException(object? sender, UnobservedTaskExceptionEventArgs e) {
+        this.logger.Warning("========== EXCEPTION IN TASK!");
+        this.logger.Warning(e.Exception.ToString());
     }
 
-    private nint UnhandledExceptionFilter(ExceptionPointersStruct* exceptionInfo) {
-        this.logger.Error("========== UNHANDLED EXCEPTION!!!");
-        this.logger.Error("Exception code: {Code:X8}", exceptionInfo->ExceptionRecord->ExceptionCode);
-        this.logger.Error("Exception address: {Address:X8}", exceptionInfo->ExceptionRecord->ExceptionAddress);
+    private void UnhandledException(object sender, UnhandledExceptionEventArgs e) {
+        this.logger.Error("========== UNHANDLED .NET EXCEPTION!!!");
+        this.logger.Error(e.ExceptionObject.ToString() ?? "No stack trace?");
 
         const string message = """
                                The game has crashed. Sorry! :(
@@ -93,7 +81,6 @@ internal unsafe class Hooks {
                                """;
 
         _ = MessageBox(IntPtr.Zero, message, "GDWeave", 0x30);
-        return 0;
     }
 
     private nint LoadByteCodeDetour(nint gdscript, GodotString* path) {
