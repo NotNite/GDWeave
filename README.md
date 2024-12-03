@@ -1,5 +1,7 @@
 # GDWeave
 
+[![Thunderstore downloads](https://img.shields.io/thunderstore/dt/NotNet/GDWeave)](https://thunderstore.io/c/webfishing/p/NotNet/GDWeave/) [![Build](https://github.com/NotNite/GDWeave/actions/workflows/build.yml/badge.svg)](https://github.com/NotNite/GDWeave/actions/workflows/build.yml)
+
 GDWeave is a mod loader & runtime script patcher for [the Godot Engine](https://github.com/godotengine/godot).
 
 ## Installation
