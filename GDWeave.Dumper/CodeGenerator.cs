@@ -1,4 +1,5 @@
 using GDWeave.Godot;
+using GDWeave.Godot.Variants;
 
 public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
     public void Generate(StreamWriter writer) {
@@ -30,7 +31,11 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             case TokenType.Identifier:
                 return $"{identifiers[data]}";
             case TokenType.Constant:
-                var constantToken = (ConstantToken) token;
+                var constantToken = (ConstantToken)token;
+                if (
+                    constantToken.Value is StringVariant stringVariant
+                    && stringVariant.GetValue() is string str
+                ) { return $"\"{str}\""; }
                 return constantToken.Value.GetValue().ToString() ?? "<Failed to convert to string>";
             case TokenType.Newline:
                 tabs = token.AssociatedData ?? 0;
