@@ -2,6 +2,101 @@ using GDWeave.Godot;
 using GDWeave.Godot.Variants;
 
 public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
+    Dictionary<int, string> builtinFunctionLiteral = new() {
+        [(int) BuiltinFunction.MathSin] = "sin",
+        [(int) BuiltinFunction.MathCos] = "cos",
+        [(int) BuiltinFunction.MathTan] = "tan",
+        [(int) BuiltinFunction.MathSinh] = "sinh",
+        [(int) BuiltinFunction.MathCosh] = "cosh",
+        [(int) BuiltinFunction.MathTanh] = "tanh",
+        [(int) BuiltinFunction.MathAsin] = "asin",
+        [(int) BuiltinFunction.MathAcos] = "acos",
+        [(int) BuiltinFunction.MathAtan] = "atan",
+        [(int) BuiltinFunction.MathAtan2] = "atan2",
+        [(int) BuiltinFunction.MathSqrt] = "sqrt",
+        [(int) BuiltinFunction.MathFmod] = "fmod",
+        [(int) BuiltinFunction.MathFposmod] = "fposmod",
+        [(int) BuiltinFunction.MathPosmod] = "posmod",
+        [(int) BuiltinFunction.MathFloor] = "floor",
+        [(int) BuiltinFunction.MathCeil] = "ceil",
+        [(int) BuiltinFunction.MathRound] = "round",
+        [(int) BuiltinFunction.MathAbs] = "abs",
+        [(int) BuiltinFunction.MathSign] = "sign",
+        [(int) BuiltinFunction.MathPow] = "pow",
+        [(int) BuiltinFunction.MathLog] = "log",
+        [(int) BuiltinFunction.MathExp] = "exp",
+        [(int) BuiltinFunction.MathIsnan] = "is_nan",
+        [(int) BuiltinFunction.MathIsinf] = "is_inf",
+        [(int) BuiltinFunction.MathIsequalapprox] = "is_equal_approx",
+        [(int) BuiltinFunction.MathIszeroapprox] = "is_zero_approx",
+        [(int) BuiltinFunction.MathEase] = "ease",
+        [(int) BuiltinFunction.MathDecimals] = "decimals",
+        [(int) BuiltinFunction.MathStepDecimals] = "step_decimals",
+        [(int) BuiltinFunction.MathStepify] = "stepify",
+        [(int) BuiltinFunction.MathLerp] = "lerp",
+        [(int) BuiltinFunction.MathLerpAngle] = "lerp_angle",
+        [(int) BuiltinFunction.MathInverseLerp] = "inverse_lerp",
+        [(int) BuiltinFunction.MathRangeLerp] = "range_lerp",
+        [(int) BuiltinFunction.MathSmoothstep] = "smoothstep",
+        [(int) BuiltinFunction.MathMoveToward] = "move_toward",
+        [(int) BuiltinFunction.MathDectime] = "dectime",
+        [(int) BuiltinFunction.MathRandomize] = "randomize",
+        [(int) BuiltinFunction.MathRand] = "randi",
+        [(int) BuiltinFunction.MathRandf] = "randf",
+        [(int) BuiltinFunction.MathRandom] = "rand_range",
+        [(int) BuiltinFunction.MathSeed] = "seed",
+        [(int) BuiltinFunction.MathSeed] = "rand_seed",
+        [(int) BuiltinFunction.MathDeg2Rad] = "deg2rad",
+        [(int) BuiltinFunction.MathRad2Deg] = "rad2deg",
+        [(int) BuiltinFunction.MathLinear2Db] = "linear2db",
+        [(int) BuiltinFunction.MathDb2Linear] = "db2linear",
+        [(int) BuiltinFunction.MathPolar2Cartesian] = "polar2cartesian",
+        [(int) BuiltinFunction.MathCartesian2Polar] = "cartesian2polar",
+        [(int) BuiltinFunction.MathWrap] = "wrapi",
+        [(int) BuiltinFunction.MathWrap] = "wrapf",
+        [(int) BuiltinFunction.LogicMax] = "max",
+        [(int) BuiltinFunction.LogicMin] = "min",
+        [(int) BuiltinFunction.LogicClamp] = "clamp",
+        [(int) BuiltinFunction.LogicNearestPo2] = "nearest_po2",
+        [(int) BuiltinFunction.ObjWeakref] = "weakref",
+        [(int) BuiltinFunction.FuncFuncref] = "funcref",
+        [(int) BuiltinFunction.TypeConvert] = "convert",
+        [(int) BuiltinFunction.TypeOf] = "typeof",
+        [(int) BuiltinFunction.TypeExists] = "type_exists",
+        [(int) BuiltinFunction.TextChar] = "char",
+        [(int) BuiltinFunction.TextOrd] = "ord",
+        [(int) BuiltinFunction.TextStr] = "str",
+        [(int) BuiltinFunction.TextPrint] = "print",
+        [(int) BuiltinFunction.TextPrintTabbed] = "printt",
+        [(int) BuiltinFunction.TextPrintSpaced] = "prints",
+        [(int) BuiltinFunction.TextPrinterr] = "printerr",
+        [(int) BuiltinFunction.TextPrintraw] = "printraw",
+        [(int) BuiltinFunction.TextPrintDebug] = "print_debug",
+        [(int) BuiltinFunction.PushError] = "push_error",
+        [(int) BuiltinFunction.PushWarning] = "push_warning",
+        [(int) BuiltinFunction.VarToStr] = "var2str",
+        [(int) BuiltinFunction.StrToVar] = "str2var",
+        [(int) BuiltinFunction.VarToBytes] = "var2bytes",
+        [(int) BuiltinFunction.BytesToVar] = "bytes2var",
+        [(int) BuiltinFunction.GenRange] = "range",
+        [(int) BuiltinFunction.ResourceLoad] = "load",
+        [(int) BuiltinFunction.Inst2Dict] = "inst2dict",
+        [(int) BuiltinFunction.Dict2Inst] = "dict2inst",
+        [(int) BuiltinFunction.ValidateJson] = "validate_json",
+        [(int) BuiltinFunction.ParseJson] = "parse_json",
+        [(int) BuiltinFunction.ToJson] = "to_json",
+        [(int) BuiltinFunction.Hash] = "hash",
+        [(int) BuiltinFunction.Color8] = "Color8",
+        [(int) BuiltinFunction.Colorn] = "ColorN",
+        [(int) BuiltinFunction.PrintStack] = "print_stack",
+        [(int) BuiltinFunction.GetStack] = "get_stack",
+        [(int) BuiltinFunction.InstanceFromId] = "instance_from_id",
+        [(int) BuiltinFunction.Len] = "len",
+        [(int) BuiltinFunction.IsInstanceValid] = "is_instance_valid",
+        [(int) BuiltinFunction.DeepEqual] = "deep_equal",
+        [(int) BuiltinFunction.FuncMax] = "MAX",
+    };
+
     public void Generate(StreamWriter writer) {
         var whitespaceExclusions = new List<TokenType>(
             [
@@ -92,7 +187,7 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             case TokenType.Identifier:
                 return $"{identifiers[data]}";
             case TokenType.Constant:
-                var constantToken = (ConstantToken)token;
+                var constantToken = (ConstantToken) token;
                 if (
                     constantToken.Value is StringVariant stringVariant
                     && stringVariant.GetValue() is string str
@@ -117,7 +212,9 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             case TokenType.BuiltInType:
                 return Enum.GetName((VariantType) data) ?? "<Invalid builtin type>";
             case TokenType.BuiltInFunc:
-                return Enum.GetName((BuiltinFunction) data) ?? "<Invalid builtin function>";
+                return builtinFunctionLiteral.ContainsKey(data)
+                    ? builtinFunctionLiteral[data]
+                    : "<Invalid builtin function>";
             case TokenType.OpIn:
                 return "in";
             case TokenType.OpEqual:
