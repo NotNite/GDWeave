@@ -35,8 +35,19 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                 if (
                     constantToken.Value is StringVariant stringVariant
                     && stringVariant.GetValue() is string str
-                ) { return $"\"{str}\""; }
-                return constantToken.Value.GetValue().ToString() ?? "<Failed to convert to string>";
+                ) {
+                    return $"\"{str}\"";
+                } else if (constantToken.Value is BoolVariant boolVariant) {
+                    // Lowercase to match GDScript
+                    return (bool) boolVariant.GetValue() ? "true" : "false";
+                } else if (constantToken.Value is RealVariant realVariant) {
+                    // Refrain from omitting trailing zeros
+                    var value = (double) realVariant.GetValue();
+                    return value.ToString("F");
+                } else {
+                    return constantToken.Value.GetValue().ToString()
+                        ?? "<Failed to convert to string>";
+                }
             case TokenType.Newline:
                 tabs = token.AssociatedData ?? 0;
                 return "\n";
