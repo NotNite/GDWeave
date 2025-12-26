@@ -3,15 +3,65 @@ using GDWeave.Godot.Variants;
 
 public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
     public void Generate(StreamWriter writer) {
-        var onNewLine = false;
+        var whitespaceExclusions = new List<TokenType>(
+            [
+                // Identifiers //
+                TokenType.BuiltInFunc,
+                TokenType.PrPreload,
+                TokenType.BuiltInType,
+                TokenType.Identifier,
+                TokenType.Constant,
+                TokenType.ConstInf,
+                TokenType.ConstNan,
+                TokenType.ConstPi,
+                // Brackets, accessors, etc //
+                TokenType.BracketOpen,
+                TokenType.BracketClose,
+                TokenType.ParenthesisOpen,
+                TokenType.ParenthesisClose,
+                TokenType.Period,
+                TokenType.Dollar,
+                // Operators, Keywords //
+                TokenType.OpDiv,
+                TokenType.OpSub,
+                TokenType.PrYield,
+                TokenType.CfElse,
+            ]
+        );
+
+        var binaryOperators = new List<TokenType>(
+            [
+                TokenType.OpIn,
+                TokenType.OpAnd,
+                TokenType.OpOr,
+                TokenType.OpEqual,
+                TokenType.OpGreater,
+                TokenType.OpGreaterEqual,
+                TokenType.OpLess,
+                TokenType.OpLessEqual,
+                TokenType.OpNotEqual,
+                TokenType.OpAssign,
+                TokenType.OpAdd,
+                // TokenType.OpSub also used for negative numbers
+                TokenType.OpMul,
+                // TokenType.OpDiv also used for get_node paths
+                TokenType.OpMod,
+                TokenType.OpAssignAdd,
+                TokenType.OpAssignSub,
+                TokenType.OpAssignDiv,
+                TokenType.OpAssignMul,
+                TokenType.OpAssignMod,
+            ]
+        );
+
         foreach (var token in tokens) {
             var tabs = 0u;
             var gen = this.GenerateToken(token, ref tabs);
+            var onNewLine = gen == "\n";
 
-            onNewLine = gen == "\n";
-
-            if (!onNewLine)
-            {
+            if (binaryOperators.Contains(token.Type)) {
+                gen = $" {gen} ";
+            } else if (!onNewLine && !whitespaceExclusions.Contains(token.Type)) {
                 gen += ' ';
             }
 
@@ -19,6 +69,17 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
 
             for (var i = 0; i < tabs; i++) {
                 writer.Write('\t');
+            }
+
+            // If & Else keywords toggle for handling if-else and ternary cases
+            if (token.Type == TokenType.Newline) {
+                binaryOperators.Remove(TokenType.CfIf);
+                binaryOperators.Remove(TokenType.CfElse);
+            } else {
+                if (!binaryOperators.Contains(TokenType.CfIf)) {
+                    binaryOperators.Add(TokenType.CfIf);
+                    binaryOperators.Add(TokenType.CfElse);
+                }
             }
         }
     }
