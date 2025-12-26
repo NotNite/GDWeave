@@ -312,13 +312,13 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                 return "is";
 
             case TokenType.PrOnready:
-                return "@onready";
+                return "onready";
             case TokenType.PrTool:
                 return "@tool";
             case TokenType.PrStatic:
                 return "static";
             case TokenType.PrExport:
-                return "@export";
+                return "export";
             // I believe this is incorrect...
             // Can't find a good explanation for this token online
             case TokenType.PrSetget:
