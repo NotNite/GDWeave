@@ -61,11 +61,11 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
             case TokenType.OpGreaterEqual:
                 return ">=";
             case TokenType.OpAnd:
-                return "&&";
+                return "and";
             case TokenType.OpOr:
-                return "||";
+                return "or";
             case TokenType.OpNot:
-                return "!";
+                return "not";
 
             case TokenType.OpAdd:
                 return "+";
