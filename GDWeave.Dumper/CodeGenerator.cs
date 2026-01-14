@@ -192,7 +192,11 @@ public class CodeGenerator(List<Token> tokens, List<string> identifiers) {
                     constantToken.Value is StringVariant stringVariant
                     && stringVariant.GetValue() is string str
                 ) {
-                    return $"\"{str}\"";
+                    // Prevent output of processed escape sequences
+                    // (These are literal chars so it is insufficient to escape backslashes as a catch-all)
+                    str = str.Replace("\n", "\\n");
+                    str = str.Replace("\t", "\\t");
+                    return '"' + str + '"';
                 } else if (constantToken.Value is BoolVariant boolVariant) {
                     // Lowercase to match GDScript
                     return (bool) boolVariant.GetValue() ? "true" : "false";
