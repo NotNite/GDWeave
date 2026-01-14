@@ -5,7 +5,7 @@ public enum VariantType : uint {
 
     // atomic types
     Bool,
-    Int,
+    @int,
     Real,
     String,
 

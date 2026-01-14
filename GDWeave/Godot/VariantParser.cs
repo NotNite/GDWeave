@@ -11,7 +11,7 @@ public class VariantParser {
     public static Dictionary<VariantType, Func<ParserReaderContext, Variant>> Parsers = new() {
         {VariantType.Nil, ctx => new NilVariant(ctx)},
         {VariantType.Bool, ctx => new BoolVariant(ctx)},
-        {VariantType.Int, ctx => new IntVariant(ctx)},
+        {VariantType.@int, ctx => new IntVariant(ctx)},
         {VariantType.Real, ctx => new RealVariant(ctx)},
         {VariantType.String, ctx => new StringVariant(ctx)},
     };
