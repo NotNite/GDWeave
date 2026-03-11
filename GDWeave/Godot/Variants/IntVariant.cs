@@ -15,7 +15,7 @@ public class IntVariant : Variant {
     }
 
     public override void Write(VariantParser.ParserWriterContext ctx) {
-        ctx.WriteType(VariantType.Int, is64: this.Is64);
+        ctx.WriteType(VariantType.@int, is64: this.Is64);
         if (this.Is64) {
             ctx.Writer.Write(this.Value);
         } else {
